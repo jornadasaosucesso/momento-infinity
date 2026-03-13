@@ -1,7 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // server.js — MOMENTO∞
-// Transporte: WebSocket puro — sem Firebase por enquanto
-// Quando quiser ativar gravação: descomente os blocos marcados com 🔥 FIREBASE
+// Estratégia vídeo: upload HTTP → arquivo em /tmp → URL → WS notifica TV
+// Estratégia foto:  WebSocket puro (base64 pequeno)
+// 🔥 FIREBASE: ganchos comentados prontos para ativar
 // ─────────────────────────────────────────────────────────────────────────────
 
 import 'dotenv/config';
@@ -9,9 +10,11 @@ import express             from 'express';
 import cors                from 'cors';
 import path                from 'path';
 import crypto              from 'crypto';
+import fs                  from 'fs';
 import { createServer }    from 'http';
 import { WebSocketServer } from 'ws';
 import { fileURLToPath }   from 'url';
+import multer              from 'multer';
 
 // 🔥 FIREBASE — descomente quando quiser ativar gravação
 // import { db, storage } from './config/firebase.js';
@@ -20,13 +23,37 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const isDev      = process.env.NODE_ENV !== 'production';
 
+// ─── PASTA TEMP PARA VÍDEOS ───────────────────────────────────────────────────
+const TMP_DIR = path.join(__dirname, 'tmp_videos');
+if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
+
+// limpa vídeos antigos (>2h) a cada 30min
+setInterval(() => {
+  const agora = Date.now();
+  fs.readdirSync(TMP_DIR).forEach(f => {
+    const fp  = path.join(TMP_DIR, f);
+    const age = agora - fs.statSync(fp).mtimeMs;
+    if (age > 2 * 60 * 60 * 1000) fs.unlinkSync(fp);
+  });
+}, 30 * 60 * 1000);
+
+// ─── MULTER — recebe vídeo ────────────────────────────────────────────────────
+const upload = multer({
+  dest: TMP_DIR,
+  limits: { fileSize: 80 * 1024 * 1024 }, // 80MB máx
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('video/')) cb(null, true);
+    else cb(new Error('Apenas vídeos são aceitos.'));
+  }
+});
+
 // ─── APP ─────────────────────────────────────────────────────────────────────
 const app    = express();
 const server = createServer(app);
 
 app.use(cors());
-app.use(express.json({ limit: '150mb' }));           // ← suporta vídeos base64
-app.use(express.urlencoded({ extended: true, limit: '150mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // ─── CSP ─────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
@@ -41,7 +68,6 @@ app.use((req, res, next) => {
         "media-src 'self' blob: data:;",
         "connect-src 'self' ws: wss:;",
       ].join(' ');
-
   res.setHeader('Content-Security-Policy', csp);
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
   next();
@@ -50,11 +76,14 @@ app.use((req, res, next) => {
 // ─── ESTÁTICOS ───────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
+// serve vídeos temporários
+app.use('/tmp_videos', express.static(TMP_DIR));
+
 // ─── MEMÓRIA DE SESSÕES ───────────────────────────────────────────────────────
 const sessoes = new Map();
 
 // ─── WEBSOCKET SERVER ─────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ server, maxPayload: 150 * 1024 * 1024 }); // 150MB
+const wss = new WebSocketServer({ server });
 
 wss.on('connection', (ws) => {
 
@@ -62,13 +91,10 @@ wss.on('connection', (ws) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
 
-    // ── CELULAR se registra na sessão ────────────────────────────────────────
+    // ── CELULAR se registra ──────────────────────────────────────────────────
     if (msg.tipo === 'celular_conectado') {
       const sessao = sessoes.get(msg.sessaoId);
-      if (!sessao) {
-        ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' }));
-        return;
-      }
+      if (!sessao) { ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' })); return; }
       ws.sessaoId = msg.sessaoId;
       ws.papel    = 'celular';
       sessao.celulares.add(ws);
@@ -77,13 +103,10 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // ── TV se registra como receptor ─────────────────────────────────────────
+    // ── TV se registra ───────────────────────────────────────────────────────
     if (msg.tipo === 'tv_conectada') {
       const sessao = sessoes.get(msg.sessaoId);
-      if (!sessao) {
-        ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' }));
-        return;
-      }
+      if (!sessao) { ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' })); return; }
       ws.sessaoId  = msg.sessaoId;
       ws.papel     = 'tv';
       sessao.tvSocket = ws;
@@ -92,61 +115,21 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // ── CELULAR envia FOTO → servidor repassa para TV ─────────────────────────
+    // ── FOTO (base64 pequeno — ok via WS) ────────────────────────────────────
     if (msg.tipo === 'foto') {
       const sessao = sessoes.get(ws.sessaoId);
       if (!sessao) return;
-
       const tv = sessao.tvSocket;
       if (tv && tv.readyState === tv.OPEN) {
-        tv.send(JSON.stringify({
-          tipo:      'foto',
-          dataUrl:   msg.dataUrl,
-          fotoId:    msg.fotoId,
-          timestamp: Date.now(),
-        }));
+        tv.send(JSON.stringify({ tipo: 'foto', dataUrl: msg.dataUrl, fotoId: msg.fotoId, timestamp: Date.now() }));
         console.log(`📸 Foto ${msg.fotoId} → TV (sessão ${ws.sessaoId})`);
       }
-
       ws.send(JSON.stringify({ tipo: 'foto_ok', fotoId: msg.fotoId }));
 
-      // 🔥 FIREBASE — descomente para gravar a foto no Storage
-      // const filePath = `Eventos/${ws.sessaoId}/${msg.fotoId}.webp`;
-      // const ref      = storage.bucket().file(filePath);
-      // const buffer   = Buffer.from(msg.dataUrl.split(',')[1], 'base64');
+      // 🔥 FIREBASE — descomente para gravar foto
+      // const ref    = storage.bucket().file(`Eventos/${ws.sessaoId}/${msg.fotoId}.webp`);
+      // const buffer = Buffer.from(msg.dataUrl.split(',')[1], 'base64');
       // await ref.save(buffer, { contentType: 'image/webp' });
-      // const [url]    = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
-      // await db.ref(`Eventos/${ws.sessaoId}/fotos/${msg.fotoId}`).set(url);
-
-      return;
-    }
-
-    // ── CELULAR envia VÍDEO → servidor repassa para TV ────────────────────────
-    if (msg.tipo === 'video') {
-      const sessao = sessoes.get(ws.sessaoId);
-      if (!sessao) return;
-
-      const tv = sessao.tvSocket;
-      if (tv && tv.readyState === tv.OPEN) {
-        tv.send(JSON.stringify({
-          tipo:      'video',
-          dataUrl:   msg.dataUrl,
-          videoId:   msg.videoId,
-          timestamp: Date.now(),
-        }));
-        console.log(`🎬 Vídeo ${msg.videoId} → TV (sessão ${ws.sessaoId})`);
-      }
-
-      ws.send(JSON.stringify({ tipo: 'video_ok', videoId: msg.videoId }));
-
-      // 🔥 FIREBASE — descomente para gravar o vídeo no Storage
-      // const filePath = `Eventos/${ws.sessaoId}/${msg.videoId}.webm`;
-      // const ref      = storage.bucket().file(filePath);
-      // const buffer   = Buffer.from(msg.dataUrl.split(',')[1], 'base64');
-      // await ref.save(buffer, { contentType: 'video/webm' });
-      // const [url]    = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
-      // await db.ref(`Eventos/${ws.sessaoId}/videos/${msg.videoId}`).set(url);
-
       return;
     }
   });
@@ -160,94 +143,104 @@ wss.on('connection', (ws) => {
   });
 });
 
+// ─── UPLOAD DE VÍDEO (HTTP POST) ─────────────────────────────────────────────
+// O celular faz POST multipart com o vídeo
+// O servidor salva em /tmp_videos, avisa a TV via WS com a URL
+app.post('/api/video/upload', upload.single('video'), (req, res) => {
+  try {
+    const sessaoId = (req.body.sessaoId || '').toUpperCase();
+    const videoId  = req.body.videoId || ('vid_' + Date.now());
+    const sessao   = sessoes.get(sessaoId);
+
+    if (!sessao) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, error: 'Sessão não encontrada.' });
+    }
+
+    if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
+
+    // renomeia para extensão correta
+    const ext     = req.file.mimetype.includes('mp4') ? 'mp4' : 'webm';
+    const newName = `${sessaoId}_${videoId}.${ext}`;
+    const newPath = path.join(TMP_DIR, newName);
+    fs.renameSync(req.file.path, newPath);
+
+    const baseUrl  = process.env.BASE_URL || `https://${req.headers.host}`;
+    const videoUrl = `${baseUrl}/tmp_videos/${newName}`;
+
+    console.log(`🎬 Vídeo ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
+
+    // avisa TV via WebSocket com a URL do vídeo
+    const tv = sessao.tvSocket;
+    if (tv && tv.readyState === tv.OPEN) {
+      tv.send(JSON.stringify({ tipo: 'video', videoUrl, videoId, timestamp: Date.now() }));
+    }
+
+    // 🔥 FIREBASE — descomente para gravar no Storage
+    // const buffer = fs.readFileSync(newPath);
+    // const ref    = storage.bucket().file(`Eventos/${sessaoId}/${videoId}.${ext}`);
+    // await ref.save(buffer, { contentType: req.file.mimetype });
+    // const [url]  = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
+    // await db.ref(`Eventos/${sessaoId}/videos/${videoId}`).set(url);
+    // fs.unlinkSync(newPath); // apaga temp se for pro firebase
+
+    res.json({ success: true, videoId, videoUrl });
+
+  } catch (err) {
+    console.error('Erro no upload:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ─── ROTAS HTTP ───────────────────────────────────────────────────────────────
 
-// POST /api/sessao/nova
 app.post('/api/sessao/nova', async (req, res) => {
   try {
     const nomeEvento = (req.body.nomeEvento || 'Evento').trim().slice(0, 80);
     const sessaoId   = crypto.randomBytes(3).toString('hex').toUpperCase();
     const criadaEm   = new Date().toISOString();
 
-    sessoes.set(sessaoId, {
-      nomeEvento,
-      criadaEm,
-      ativa:     true,
-      tvSocket:  null,
-      celulares: new Set(),
-    });
+    sessoes.set(sessaoId, { nomeEvento, criadaEm, ativa: true, tvSocket: null, celulares: new Set() });
 
-    // 🔥 FIREBASE — descomente para persistir sessão no DB
+    // 🔥 FIREBASE — descomente para persistir sessão
     // await db.ref(`Eventos/${sessaoId}/meta`).set({ nomeEvento, criadaEm, ativa: true });
 
-    const baseUrl       = process.env.BASE_URL || `https://${req.headers.host}`;
-    const urlCamera     = `${baseUrl}/camera_evento.html?sessao=${sessaoId}&evento=${encodeURIComponent(nomeEvento)}`;
-    const urlTv         = `${baseUrl}/tv.html?sessao=${sessaoId}`;
-    const urlCameraVideo= `${baseUrl}/camera_video.html?sessao=${sessaoId}`;
-    const urlTvVideo    = `${baseUrl}/tv_video.html?sessao=${sessaoId}`;
+    const baseUrl        = process.env.BASE_URL || `https://${req.headers.host}`;
+    const urlCamera      = `${baseUrl}/camera_evento.html?sessao=${sessaoId}&evento=${encodeURIComponent(nomeEvento)}`;
+    const urlTv          = `${baseUrl}/tv.html?sessao=${sessaoId}`;
+    const urlCameraVideo = `${baseUrl}/camera_video.html?sessao=${sessaoId}`;
+    const urlTvVideo     = `${baseUrl}/tv_video.html?sessao=${sessaoId}`;
 
     console.log(`🎉 [SESSÃO CRIADA] ${sessaoId} — "${nomeEvento}"`);
-    res.json({
-      success: true, sessaoId, nomeEvento, criadaEm,
-      urls: {
-        camera:       urlCamera,
-        tv:           urlTv,
-        camera_video: urlCameraVideo,
-        tv_video:     urlTvVideo,
-      }
+    res.json({ success: true, sessaoId, nomeEvento, criadaEm,
+      urls: { camera: urlCamera, tv: urlTv, camera_video: urlCameraVideo, tv_video: urlTvVideo }
     });
-
   } catch (err) {
-    console.error('Erro ao criar sessão:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// DELETE /api/sessao/:id
 app.delete('/api/sessao/:id', async (req, res) => {
   const sessaoId = req.params.id.toUpperCase();
-
-  if (!sessoes.has(sessaoId)) {
-    return res.status(404).json({ success: false, error: 'Sessão não encontrada.' });
-  }
+  if (!sessoes.has(sessaoId)) return res.status(404).json({ success: false, error: 'Sessão não encontrada.' });
 
   const sessao = sessoes.get(sessaoId);
   const msgFim = JSON.stringify({ tipo: 'sessao_encerrada' });
-
   if (sessao.tvSocket?.readyState === sessao.tvSocket?.OPEN) sessao.tvSocket.send(msgFim);
   sessao.celulares.forEach(ws => { if (ws.readyState === ws.OPEN) ws.send(msgFim); });
   sessoes.delete(sessaoId);
-
-  // 🔥 FIREBASE — descomente para apagar do DB e Storage
-  // await db.ref(`Eventos/${sessaoId}`).remove();
-  // const [files] = await storage.bucket().getFiles({ prefix: `Eventos/${sessaoId}/` });
-  // await Promise.all(files.map(f => f.delete()));
 
   console.log(`🔒 [SESSÃO ENCERRADA] ${sessaoId}`);
   res.json({ success: true, sessaoId, mensagem: 'Sessão encerrada.' });
 });
 
-// GET /api/sessao/:id
 app.get('/api/sessao/:id', (req, res) => {
   const sessaoId = req.params.id.toUpperCase();
   const sessao   = sessoes.get(sessaoId);
-
-  if (!sessao) {
-    return res.status(404).json({ success: false, ativa: false, error: 'Sessão não encontrada.' });
-  }
-
-  res.json({
-    success:    true,
-    sessaoId,
-    nomeEvento: sessao.nomeEvento,
-    criadaEm:   sessao.criadaEm,
-    ativa:      true,
-    tvOnline:   sessao.tvSocket !== null,
-    celulares:  sessao.celulares.size,
-  });
+  if (!sessao) return res.status(404).json({ success: false, ativa: false, error: 'Sessão não encontrada.' });
+  res.json({ success: true, sessaoId, nomeEvento: sessao.nomeEvento, criadaEm: sessao.criadaEm, ativa: true, tvOnline: sessao.tvSocket !== null, celulares: sessao.celulares.size });
 });
 
-// GET /health
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', servico: 'Momento∞', timestamp: new Date().toISOString(), sessoes_ativas: sessoes.size });
 });

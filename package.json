@@ -1,21 +1,21 @@
 {
-  "name": "momento-infinity",
+  "name": "infinity",
   "version": "1.0.0",
-  "description": "Mosaico fotográfico em tempo real para eventos",
-  "type": "module",
+  "description": "MOMENTO∞ — Mosaico fotográfico e cinema ao vivo para eventos",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "ws": "^8.17.0",
-    "firebase-admin": "^12.2.0"
+    "multer": "^1.4.5-lts.1",
+    "ws": "^8.17.0"
   }
 }
