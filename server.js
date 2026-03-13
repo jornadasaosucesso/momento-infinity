@@ -1,9 +1,5 @@
-// ─────────────────────────────────────────────────────────────────────────────
 // server.js — MOMENTO∞
-// Estratégia vídeo: upload HTTP → arquivo em /tmp → URL → WS notifica TV
-// Estratégia foto:  WebSocket puro (base64 pequeno)
-// 🔥 FIREBASE: ganchos comentados prontos para ativar
-// ─────────────────────────────────────────────────────────────────────────────
+// FIREBASE: ganchos comentados prontos para ativar
 
 import 'dotenv/config';
 import express             from 'express';
@@ -16,18 +12,16 @@ import { WebSocketServer } from 'ws';
 import { fileURLToPath }   from 'url';
 import multer              from 'multer';
 
-// 🔥 FIREBASE — descomente quando quiser ativar gravação
+// FIREBASE — descomente quando quiser ativar gravação
 // import { db, storage } from './config/firebase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
 const isDev      = process.env.NODE_ENV !== 'production';
 
-// ─── PASTA TEMP PARA VÍDEOS ───────────────────────────────────────────────────
 const TMP_DIR = path.join(__dirname, 'tmp_videos');
 if (!fs.existsSync(TMP_DIR)) fs.mkdirSync(TMP_DIR, { recursive: true });
 
-// limpa vídeos antigos (>2h) a cada 30min
 setInterval(() => {
   const agora = Date.now();
   fs.readdirSync(TMP_DIR).forEach(f => {
@@ -37,7 +31,6 @@ setInterval(() => {
   });
 }, 30 * 60 * 1000);
 
-// ─── MULTER — recebe vídeo ────────────────────────────────────────────────────
 const upload = multer({
   dest: TMP_DIR,
   limits: { fileSize: 80 * 1024 * 1024 }, // 80MB máx
@@ -47,7 +40,6 @@ const upload = multer({
   }
 });
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
 const app    = express();
 const server = createServer(app);
 
@@ -55,7 +47,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ─── CSP ─────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   const csp = isDev
     ? "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; media-src * blob: data:; font-src * data:;"
@@ -73,25 +64,33 @@ app.use((req, res, next) => {
   next();
 });
 
-// ─── ESTÁTICOS ───────────────────────────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
 
-// serve vídeos temporários
-app.use('/tmp_videos', express.static(TMP_DIR));
+app.use('/tmp_videos', express.static(TMP_DIR, {
+  setHeaders: (res, filePath) => {
 
-// ─── MEMÓRIA DE SESSÕES ───────────────────────────────────────────────────────
+    if (filePath.endsWith('.mp4')) {
+      res.setHeader('Content-Type', 'video/mp4');
+    }
+
+    if (filePath.endsWith('.webm')) {
+      res.setHeader('Content-Type', 'video/webm');
+    }
+
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+
+  }
+}));
+
 const sessoes = new Map();
 
-// ─── WEBSOCKET SERVER ─────────────────────────────────────────────────────────
 const wss = new WebSocketServer({ server });
-
 wss.on('connection', (ws) => {
-
   ws.on('message', (raw) => {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
 
-    // ── CELULAR se registra ──────────────────────────────────────────────────
     if (msg.tipo === 'celular_conectado') {
       const sessao = sessoes.get(msg.sessaoId);
       if (!sessao) { ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' })); return; }
@@ -103,7 +102,6 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // ── TV se registra ───────────────────────────────────────────────────────
     if (msg.tipo === 'tv_conectada') {
       const sessao = sessoes.get(msg.sessaoId);
       if (!sessao) { ws.send(JSON.stringify({ tipo: 'erro', mensagem: 'Sessão não encontrada.' })); return; }
@@ -115,7 +113,6 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // ── FOTO (base64 pequeno — ok via WS) ────────────────────────────────────
     if (msg.tipo === 'foto') {
       const sessao = sessoes.get(ws.sessaoId);
       if (!sessao) return;
@@ -126,7 +123,6 @@ wss.on('connection', (ws) => {
       }
       ws.send(JSON.stringify({ tipo: 'foto_ok', fotoId: msg.fotoId }));
 
-      // 🔥 FIREBASE — descomente para gravar foto
       // const ref    = storage.bucket().file(`Eventos/${ws.sessaoId}/${msg.fotoId}.webp`);
       // const buffer = Buffer.from(msg.dataUrl.split(',')[1], 'base64');
       // await ref.save(buffer, { contentType: 'image/webp' });
@@ -143,9 +139,7 @@ wss.on('connection', (ws) => {
   });
 });
 
-// ─── UPLOAD DE VÍDEO (HTTP POST) ─────────────────────────────────────────────
-// O celular faz POST multipart com o vídeo
-// O servidor salva em /tmp_videos, avisa a TV via WS com a URL
+// ─── UPLOAD DE VÍDEO (HTTP POST) 
 app.post('/api/video/upload', upload.single('video'), (req, res) => {
   try {
     const sessaoId = (req.body.sessaoId || '').toUpperCase();
@@ -159,7 +153,6 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
 
-    // renomeia para extensão correta
     const ext     = req.file.mimetype.includes('mp4') ? 'mp4' : 'webm';
     const newName = `${sessaoId}_${videoId}.${ext}`;
     const newPath = path.join(TMP_DIR, newName);
@@ -170,13 +163,11 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     console.log(`🎬 Vídeo ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
 
-    // avisa TV via WebSocket com a URL do vídeo
     const tv = sessao.tvSocket;
     if (tv && tv.readyState === tv.OPEN) {
       tv.send(JSON.stringify({ tipo: 'video', videoUrl, videoId, timestamp: Date.now() }));
     }
 
-    // 🔥 FIREBASE — descomente para gravar no Storage
     // const buffer = fs.readFileSync(newPath);
     // const ref    = storage.bucket().file(`Eventos/${sessaoId}/${videoId}.${ext}`);
     // await ref.save(buffer, { contentType: req.file.mimetype });
@@ -192,8 +183,6 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
   }
 });
 
-// ─── ROTAS HTTP ───────────────────────────────────────────────────────────────
-
 app.post('/api/sessao/nova', async (req, res) => {
   try {
     const nomeEvento = (req.body.nomeEvento || 'Evento').trim().slice(0, 80);
@@ -202,7 +191,6 @@ app.post('/api/sessao/nova', async (req, res) => {
 
     sessoes.set(sessaoId, { nomeEvento, criadaEm, ativa: true, tvSocket: null, celulares: new Set() });
 
-    // 🔥 FIREBASE — descomente para persistir sessão
     // await db.ref(`Eventos/${sessaoId}/meta`).set({ nomeEvento, criadaEm, ativa: true });
 
     const baseUrl        = process.env.BASE_URL || `https://${req.headers.host}`;
@@ -247,7 +235,6 @@ app.get('/health', (req, res) => {
 
 app.use((req, res) => res.status(404).json({ error: 'Rota não encontrada.' }));
 
-// ─── START ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, '0.0.0.0', () => {
   console.log('\n✨ ─────────────────────────────────────────');
