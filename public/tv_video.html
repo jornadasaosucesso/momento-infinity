@@ -7,57 +7,34 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; font-family: Arial, sans-serif; }
-
 #player { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:#000; display:none; }
 #player.visivel { display:block; }
-
-#tela-inicio {
-  position:fixed; inset:0; z-index:50; background:#000;
-  display:flex; align-items:center; justify-content:center; gap:60px; padding:40px;
-}
+#tela-inicio { position:fixed; inset:0; z-index:50; background:#000; display:flex; align-items:center; justify-content:center; gap:60px; padding:40px; }
 #tela-inicio.oculto { display:none; }
-
 .logo { font-size:64px; font-weight:900; letter-spacing:12px; color:#fff; line-height:1; }
 .logo em { color:rgba(255,255,255,.2); font-style:normal; }
 .logo-sub { font-size:11px; letter-spacing:6px; color:rgba(255,255,255,.3); text-transform:uppercase; margin-top:8px; }
-
 .col-esq { display:flex; flex-direction:column; gap:28px; }
 .col-dir  { display:flex; flex-direction:column; align-items:center; gap:14px; }
-
-#btn-ativar {
-  background:#fff; color:#000; border:none; border-radius:40px; padding:16px 40px;
-  font-size:14px; font-weight:700; letter-spacing:4px; text-transform:uppercase; cursor:pointer;
-}
+#btn-ativar { background:#fff; color:#000; border:none; border-radius:40px; padding:16px 40px; font-size:14px; font-weight:700; letter-spacing:4px; text-transform:uppercase; cursor:pointer; }
 #btn-ativar:hover { background:#e0e0e0; }
 #btn-ativar.ok    { background:#4caf82; color:#fff; pointer-events:none; }
 .hint { font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.2); text-transform:uppercase; }
-
-#qr-canvas { background:#fff; padding:12px; border-radius:6px; }
+#qr-canvas { background:#fff; padding:10px; border-radius:6px; display:block; }
 .qr-label  { font-size:10px; letter-spacing:3px; color:rgba(255,255,255,.3); text-transform:uppercase; }
 #sid-big   { font-size:20px; font-weight:700; letter-spacing:8px; color:rgba(255,255,255,.2); }
-
-#aguardando {
-  position:fixed; inset:0; z-index:20; background:#000;
-  display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px;
-}
+#aguardando { position:fixed; inset:0; z-index:20; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
 #aguardando.visivel { display:flex; }
 .ag-logo { font-size:56px; font-weight:900; letter-spacing:12px; }
 .ag-logo em { color:rgba(255,255,255,.2); font-style:normal; }
 .ag-sub  { font-size:10px; letter-spacing:6px; color:rgba(255,255,255,.25); text-transform:uppercase; }
 .pulse   { width:8px; height:8px; border-radius:50%; background:#fff; opacity:.3; animation:pulse 2s ease infinite; }
 @keyframes pulse { 0%,100%{transform:scale(.6);opacity:.15;} 50%{transform:scale(1.4);opacity:.6;} }
-
-#qr-mini-wrap { position:fixed; bottom:50px; right:20px; z-index:30; display:none; flex-direction:column; align-items:center; gap:6px; opacity:.7; }
+#qr-mini-wrap { position:fixed; bottom:50px; right:20px; z-index:30; display:none; flex-direction:column; align-items:center; gap:6px; opacity:.75; }
 #qr-mini-wrap.visivel { display:flex; }
-#qr-mini  { background:#fff; padding:6px; border-radius:4px; }
+#qr-mini { background:#fff; padding:5px; border-radius:4px; display:block; }
 .qr-mini-txt { font-size:8px; letter-spacing:2px; color:rgba(255,255,255,.3); text-transform:uppercase; }
-
-#status-bar {
-  position:fixed; bottom:0; left:0; right:0; z-index:40;
-  background:rgba(0,0,0,.9); padding:8px 20px;
-  display:flex; align-items:center; justify-content:space-between;
-  font-size:10px; letter-spacing:2px; text-transform:uppercase;
-}
+#status-bar { position:fixed; bottom:0; left:0; right:0; z-index:40; background:rgba(0,0,0,.9); padding:8px 20px; display:flex; align-items:center; justify-content:space-between; font-size:10px; letter-spacing:2px; text-transform:uppercase; }
 .sb-ws  { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.35); }
 .wsdot  { width:7px; height:7px; border-radius:50%; background:#555; }
 .wsdot.verde    { background:#4caf82; box-shadow:0 0 8px #4caf82; }
@@ -65,13 +42,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 .wsdot.vermelho { background:#e05252; }
 .sb-msg { color:rgba(255,255,255,.5); text-align:center; }
 .sb-sid { color:rgba(255,255,255,.2); font-size:9px; }
-
-#badge {
-  position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:30;
-  background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:30px; padding:10px 28px;
-  font-size:11px; letter-spacing:4px; text-transform:uppercase; pointer-events:none;
-  transition:transform .5s cubic-bezier(.22,1,.36,1);
-}
+#badge { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:30; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:30px; padding:10px 28px; font-size:11px; letter-spacing:4px; text-transform:uppercase; pointer-events:none; transition:transform .5s cubic-bezier(.22,1,.36,1); }
 #badge.show { transform:translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -87,7 +58,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
     <div class="hint">Clique uma vez para ativar reprodução</div>
   </div>
   <div class="col-dir">
-    <canvas id="qr-canvas" width="160" height="160"></canvas>
+    <canvas id="qr-canvas" width="180" height="180"></canvas>
     <div class="qr-label">Escaneie para enviar vídeo</div>
     <div id="sid-big">—</div>
   </div>
@@ -102,7 +73,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 <video id="player" playsinline muted loop></video>
 
 <div id="qr-mini-wrap">
-  <canvas id="qr-mini" width="90" height="90"></canvas>
+  <canvas id="qr-mini" width="100" height="100"></canvas>
   <div class="qr-mini-txt">Envie seu vídeo</div>
 </div>
 
@@ -115,33 +86,143 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 </div>
 
 <script>
-// ── QR CODE NATIVO (sem CDN) ──────────────────────────────────────────────────
-// Implementação mínima de QR Code via canvas
-function desenharQR(canvas, texto) {
-  // usa a URL do celular diretamente como imagem QR via API externa sem JS bloqueado
-  // fallback: mostra o link em texto se não conseguir
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width; const h = canvas.height;
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0,0,w,h);
+// ══════════════════════════════════════════════════════════════════════════════
+// QR CODE 100% LOCAL — algoritmo embutido, zero dependência externa
+// Baseado em QRious (MIT License) — versão simplificada para URLs
+// ══════════════════════════════════════════════════════════════════════════════
+!function(){
+"use strict";
+// Tabela de capacidades QR versão 1-10, nível M
+var QR_CAPACITY=[0,20,32,57,84,106,154,182,235,293,365];
+var GF_EXP=new Uint8Array(512),GF_LOG=new Uint8Array(256);
+(function(){var x=1;for(var i=0;i<255;i++){GF_EXP[i]=x;GF_LOG[x]=i;x<<=1;if(x&256)x^=285;}for(var i=255;i<512;i++)GF_EXP[i]=GF_EXP[i-255]})();
+function gfMul(a,b){if(a===0||b===0)return 0;return GF_EXP[(GF_LOG[a]+GF_LOG[b])%255];}
+function gfPoly(gen,msg){var res=new Uint8Array(msg.length+gen.length-1);for(var i=0;i<msg.length;i++){var c=msg[i];if(c===0)continue;for(var j=0;j<gen.length;j++)res[i+j]^=gfMul(gen[j],c);}return res.slice(msg.length);}
+function makeGen(n){var g=[1];for(var i=0;i<n;i++){var t=[1,GF_EXP[i]];var r=new Uint8Array(g.length+1);for(var a=0;a<g.length;a++)for(var b=0;b<t.length;b++)r[a+b]^=gfMul(g[a],t[b]);g=Array.from(r);}return g;}
 
-  // cria imagem QR via Google Charts API (sem JS externo)
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => { ctx.drawImage(img,0,0,w,h); };
-  img.onerror = () => {
-    // fallback: mostra URL em texto pequeno
-    ctx.fillStyle = '#000';
-    ctx.font = '8px Arial';
-    ctx.fillText('Acesse:', 4, 14);
-    const words = texto.split('/');
-    words.forEach((w2,i) => ctx.fillText(w2, 4, 26 + i*10));
-  };
-  const size = w * 2;
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(texto)}`;
+// Encode byte mode
+function encodeBytes(str){
+  var bytes=[];
+  for(var i=0;i<str.length;i++){var c=str.charCodeAt(i);if(c<128)bytes.push(c);else{if(c<2048){bytes.push(192|(c>>6));bytes.push(128|(c&63));}else{bytes.push(224|(c>>12));bytes.push(128|((c>>6)&63));bytes.push(128|(c&63));}}}
+  return bytes;
 }
 
-// ── ESTADO ────────────────────────────────────────────────────────────────────
+// Gera matriz QR versão automática nível M
+window.gerarQR=function(texto){
+  var data=encodeBytes(texto);
+  // escolhe versão
+  var ver=1;
+  for(var v=1;v<=10;v++){if(QR_CAPACITY[v]>=data.length+3){ver=v;break;}}
+  // tabela ec codewords nível M por versão
+  var EC_CODEWORDS=[0,10,16,26,36,48,64,72,88,110,130];
+  var totalData=QR_CAPACITY[ver];
+  var ecCount=EC_CODEWORDS[ver];
+  var dataCount=totalData-ecCount;
+
+  // bits
+  var bits=[];
+  function pushBits(val,len){for(var i=len-1;i>=0;i--)bits.push((val>>i)&1);}
+  pushBits(4,4); // byte mode
+  pushBits(data.length,8);
+  for(var i=0;i<data.length;i++)pushBits(data[i],8);
+  pushBits(0,4); // terminator
+  while(bits.length%8!==0)bits.push(0);
+  var codewords=[];
+  for(var i=0;i<bits.length;i+=8){var b=0;for(var j=0;j<8;j++)b=(b<<1)|bits[i+j];codewords.push(b);}
+  var pad=[236,17];while(codewords.length<dataCount)codewords.push(pad[(codewords.length-Math.floor(bits.length/8))%2]);
+  var ec=Array.from(gfPoly(makeGen(ecCount),codewords));
+  var allCW=codewords.concat(ec);
+
+  // dimensão
+  var dim=17+ver*4;
+  var M=[];
+  for(var i=0;i<dim;i++){M.push(new Uint8Array(dim));}
+  var used=[];
+  for(var i=0;i<dim;i++)used.push(new Uint8Array(dim));
+
+  function setM(r,c,v){if(r>=0&&r<dim&&c>=0&&c<dim){M[r][c]=v;used[r][c]=1;}}
+
+  // finder patterns
+  function finder(r,c){
+    for(var i=-1;i<=7;i++)for(var j=-1;j<=7;j++){
+      var v=(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);
+      setM(r+i,c+j,v?1:0);
+    }
+  }
+  finder(0,0);finder(0,dim-7);finder(dim-7,0);
+
+  // timing
+  for(var i=8;i<dim-8;i++){setM(6,i,i%2===0?1:0);setM(i,6,i%2===0?1:0);}
+
+  // alignment (ver>=2)
+  var ALIGN_POS=[[],[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,28,46],[6,32,50]];
+  if(ver>=2){var pos=ALIGN_POS[ver];for(var a=0;a<pos.length;a++)for(var b=0;b<pos.length;b++){var r=pos[a],c=pos[b];if(used[r][c])continue;for(var i=-2;i<=2;i++)for(var j=-2;j<=2;j++){var v=(i===-2||i===2||j===-2||j===2||(i===0&&j===0));setM(r+i,c+j,v?1:0);}}}
+
+  // dark module
+  setM(4*ver+9,8,1);
+
+  // format info (mask 0, nível M = 101)
+  var fmt=[1,1,1,0,1,1,1,1,1,0,0,0,1,0,0];
+  var fmtPos=[[8,0],[8,1],[8,2],[8,3],[8,4],[8,5],[8,7],[8,8],[7,8],[5,8],[4,8],[3,8],[2,8],[1,8],[0,8]];
+  for(var i=0;i<15;i++){setM(fmtPos[i][0],fmtPos[i][1],fmt[i]);setM(8,dim-1-i,fmt[i] );if(i<7)setM(dim-1-i,8,fmt[14-i]);}
+
+  // data bits
+  var bitIdx=0;
+  var allBits=[];
+  for(var i=0;i<allCW.length;i++)for(var b=7;b>=0;b--)allBits.push((allCW[i]>>b)&1);
+
+  // mask 0: (row+col)%2===0
+  var col=dim-1;
+  while(col>0){
+    if(col===6)col--;
+    for(var row2=dim-1;row2>=0;row2--){
+      for(var c2=0;c2<2;c2++){
+        var cc=col-c2,rr=row2;
+        if(!used[rr][cc]){
+          var bit=bitIdx<allBits.length?allBits[bitIdx++]:0;
+          var masked=bit^((rr+cc)%2===0?1:0);
+          M[rr][cc]=masked;
+        }
+      }
+    }
+    col-=2;
+  }
+
+  return {matrix:M,size:dim};
+};
+
+// Desenha QR num canvas
+window.desenharQR=function(canvas,texto){
+  try{
+    var qr=gerarQR(texto);
+    var size=qr.size;
+    var M=qr.matrix;
+    var w=canvas.width;
+    var h=canvas.height;
+    var ctx=canvas.getContext('2d');
+    ctx.fillStyle='#ffffff';
+    ctx.fillRect(0,0,w,h);
+    var scale=Math.floor(Math.min(w,h)/size);
+    var offX=Math.floor((w-scale*size)/2);
+    var offY=Math.floor((h-scale*size)/2);
+    ctx.fillStyle='#000000';
+    for(var r=0;r<size;r++)for(var c=0;c<size;c++)if(M[r][c])ctx.fillRect(offX+c*scale,offY+r*scale,scale,scale);
+  }catch(e){
+    // fallback texto
+    var ctx2=canvas.getContext('2d');
+    ctx2.fillStyle='#fff';ctx2.fillRect(0,0,canvas.width,canvas.height);
+    ctx2.fillStyle='#000';ctx2.font='9px Arial';
+    ctx2.fillText('Acesse:',4,14);
+    var partes=texto.replace('https://','').split('?');
+    ctx2.fillText(partes[0],4,28);
+    if(partes[1])ctx2.fillText('?'+partes[1].slice(0,30),4,42);
+  }
+};
+}();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// APP
+// ══════════════════════════════════════════════════════════════════════════════
 const params   = new URLSearchParams(location.search);
 const sidParam = params.get('sessao') || null;
 const WS_URL   = (location.protocol==='https:'?'wss://':'ws://')+location.host;
@@ -155,7 +236,6 @@ let videoFila = [];
 const player = document.getElementById('player');
 function msg(txt) { document.getElementById('sb-msg').textContent = txt; }
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   if (sidParam) await carregarSessao(sidParam);
   else          await novaSessao();
@@ -164,15 +244,12 @@ window.addEventListener('DOMContentLoaded', async () => {
 async function novaSessao() {
   msg('Criando sessão...');
   try {
-    const r = await fetch('/api/sessao/nova', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ nomeEvento:'Cinema Momento∞' })
-    });
+    const r = await fetch('/api/sessao/nova', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nomeEvento:'Cinema Momento∞'}) });
     const d = await r.json();
     if (!d.success) throw new Error('falha');
     aplicar(d.sessaoId, d.urls.camera_video);
     ligarWS(d.sessaoId);
-  } catch(e) { msg('ERRO ao criar sessão: ' + e.message); }
+  } catch(e) { msg('ERRO ao criar sessão: '+e.message); }
 }
 
 async function carregarSessao(id) {
@@ -191,117 +268,67 @@ function aplicar(id, camUrl) {
   document.getElementById('sid-big').textContent = id;
   desenharQR(document.getElementById('qr-canvas'), camUrl);
   desenharQR(document.getElementById('qr-mini'),   camUrl);
-  msg('QR pronto — escaneie e clique em Iniciar');
+  msg('QR gerado — sessão '+id+' pronta');
 }
 
-// ── ATIVAR ───────────────────────────────────────────────────────────────────
 async function ativar() {
   ativado = true;
   const btn = document.getElementById('btn-ativar');
   btn.textContent = '✓ Ativado'; btn.classList.add('ok');
-
   try {
-    player.muted = true;
-    player.src   = 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQ=';
+    player.muted=true;
+    player.src='data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQ=';
     await player.play().catch(()=>{});
     player.pause(); player.removeAttribute('src'); player.load();
-  } catch(e) {}
-
-  setTimeout(() => {
+  } catch(e){}
+  setTimeout(()=>{
     document.getElementById('tela-inicio').classList.add('oculto');
     document.getElementById('aguardando').classList.add('visivel');
     document.getElementById('qr-mini-wrap').classList.add('visivel');
     msg('Ativado ✓ — aguardando vídeos');
-  }, 600);
-
-  if (videoFila.length > 0) {
-    const url = videoFila.shift();
-    setTimeout(() => tocarVideo(url), 800);
-  }
+  },600);
+  if(videoFila.length>0){ const u=videoFila.shift(); setTimeout(()=>tocarVideo(u),800); }
 }
 
-// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
 function ligarWS(id) {
-  if (recon) clearTimeout(recon);
-  try { if (ws) ws.close(); } catch(e) {}
-
-  try {
-    ws = new WebSocket(WS_URL);
-  } catch(e) {
-    msg('ERRO WS: ' + e.message);
-    recon = setTimeout(() => ligarWS(id), 5000);
-    return;
-  }
-
+  if(recon) clearTimeout(recon);
+  try { if(ws) ws.close(); } catch(e){}
+  try { ws=new WebSocket(WS_URL); } catch(e){ msg('ERRO WS: '+e.message); recon=setTimeout(()=>ligarWS(id),5000); return; }
   setWS('amarelo','conectando');
-  msg('Conectando ao servidor...');
-
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ tipo:'tv_conectada', sessaoId:id }));
-    setWS('verde','ao vivo');
-    msg('Conectado ✓ — escaneie o QR para enviar vídeo');
-  };
-
-  ws.onmessage = (e) => {
-    let m;
-    try { m = JSON.parse(e.data); } catch { return; }
-    if (m.tipo === 'video') {
-      if (!m.videoUrl) { msg('ERRO: videoUrl ausente na mensagem'); return; }
+  ws.onopen=()=>{ ws.send(JSON.stringify({tipo:'tv_conectada',sessaoId:id})); setWS('verde','ao vivo'); msg('Conectado ✓ — escaneie o QR'); };
+  ws.onmessage=(e)=>{
+    let m; try{m=JSON.parse(e.data);}catch{return;}
+    if(m.tipo==='video'){
+      if(!m.videoUrl){msg('ERRO: videoUrl ausente');return;}
       msg('Vídeo chegou!');
-      if (ativado) tocarVideo(m.videoUrl);
-      else { videoFila = [m.videoUrl]; msg('Vídeo na fila — clique em Iniciar Cinema'); }
+      if(ativado) tocarVideo(m.videoUrl);
+      else{ videoFila=[m.videoUrl]; msg('Vídeo na fila — clique em Iniciar'); }
     }
-    if (m.tipo === 'sessao_encerrada') setWS('vermelho','encerrada');
+    if(m.tipo==='sessao_encerrada') setWS('vermelho','encerrada');
   };
-
-  ws.onerror = (e) => {
-    msg('ERRO WebSocket — verifique conexão');
-    setWS('vermelho','erro');
-  };
-
-  ws.onclose = (e) => {
-    setWS('vermelho','reconectando');
-    msg('Desconectado (cód.' + e.code + ') — reconectando em 3s...');
-    recon = setTimeout(() => ligarWS(id), 3000);
-  };
+  ws.onerror=()=>{ msg('ERRO WebSocket'); setWS('vermelho','erro'); };
+  ws.onclose=(e)=>{ setWS('vermelho','reconectando'); msg('Reconectando... (cód.'+e.code+')'); recon=setTimeout(()=>ligarWS(id),3000); };
 }
 
-// ── REPRODUÇÃO ────────────────────────────────────────────────────────────────
 function tocarVideo(videoUrl) {
-  msg('Carregando: ' + videoUrl.slice(-30));
-  document.getElementById('aguardando').style.display = 'none';
-
-  const b = document.getElementById('badge');
+  msg('Carregando vídeo...');
+  document.getElementById('aguardando').style.display='none';
+  const b=document.getElementById('badge');
   b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
-
   player.pause();
-  player.removeAttribute('src');
-  player.load();
-
-  setTimeout(() => {
-    player.muted  = true;
-    player.loop   = true;
-    player.src    = videoUrl;
-    player.load();
-
-    player.oncanplay = () => {
+  player.removeAttribute('src'); player.load();
+  setTimeout(()=>{
+    player.muted=true; player.loop=true;
+    player.src=videoUrl; player.load();
+    player.oncanplay=()=>{
       player.classList.add('visivel');
-      player.play()
-        .then(()  => msg('Reproduzindo ▶ ' + videoUrl.slice(-20)))
-        .catch(err => msg('ERRO play(): ' + err.name + ' — ' + err.message));
+      player.play().then(()=>msg('Reproduzindo ▶')).catch(err=>msg('ERRO play: '+err.name+' '+err.message));
     };
-
-    player.onerror = () => {
-      const er = player.error;
-      msg('ERRO carregar vídeo — código: ' + (er ? er.code : '?'));
-    };
-  }, 200);
+    player.onerror=()=>{ const er=player.error; msg('ERRO vídeo cód.'+(er?er.code:'?')+': '+(er?er.message:'')); };
+  },200);
 }
 
-function setWS(cor, txt) {
-  document.getElementById('wsdot').className = `wsdot ${cor}`;
-  document.getElementById('wstxt').textContent = txt;
-}
+function setWS(cor,txt){ document.getElementById('wsdot').className='wsdot '+cor; document.getElementById('wstxt').textContent=txt; }
 </script>
 </body>
 </html>
