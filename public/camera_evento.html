@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Momento∞ — Fotografe!</title>
+
+<!-- Detector de webview -->
+<script>
+(function() {
+  const ua = navigator.userAgent || "";
+  const isWebview =
+    /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat/i.test(ua) ||
+    ((/iPhone|iPod|iPad/.test(ua)) && !/Safari/.test(ua)) ||
+    (/Android/.test(ua) && /wv/.test(ua));
+  if (isWebview) {
+    if (/Android/i.test(ua)) {
+      location.href = "intent://" + location.href.replace(/https?:\/\//, "") +
+        "#Intent;scheme=https;package=com.android.chrome;end";
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body.innerHTML = `
+          <div style="font-family:sans-serif;background:#0a0a0f;min-height:100vh;
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            padding:32px;text-align:center;gap:20px;color:#f0ead8;">
+            <div style="font-size:56px;">🌐</div>
+            <div style="font-size:20px;font-weight:700;color:#c9a84c;letter-spacing:3px;">ABRA NO SAFARI</div>
+            <div style="font-size:14px;color:rgba(240,234,216,0.5);line-height:1.8;">
+              Toque em <strong style="color:#e8c97a;">···</strong> e selecione<br>
+              <strong style="color:#e8c97a;">"Abrir no Navegador"</strong>
+            </div>
+          </div>`;
+      });
+    }
+  }
+})();
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --ouro:     #c9a84c;
+  --ouro2:    #e8c97a;
+  --ouro-dim: rgba(201,168,76,0.15);
+  --escuro:   #0a0a0f;
+  --escuro2:  #13131a;
+  --borda:    rgba(201,168,76,0.2);
+  --borda2:   rgba(201,168,76,0.08);
+  --texto:    #f0ead8;
+  --dim:      rgba(240,234,216,0.4);
+  --verde:    #4caf82;
+  --vermelho: #e05252;
+  --amarelo:  #e8c040;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; }
+body {
+  background: var(--escuro); color: var(--texto);
+  font-family: 'Cormorant Garamond', serif;
+  min-height: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 20px);
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.08) 0%, transparent 60%);
+}
+
+.wrap { position: relative; z-index: 1; max-width: 420px; margin: 0 auto; padding: 0 20px 40px; }
+
+.header { padding: 26px 0 18px; text-align: center; border-bottom: 1px solid var(--borda); margin-bottom: 22px; }
+.logo { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--ouro); letter-spacing: 5px; }
+.logo em { font-style: italic; font-weight: 400; color: var(--ouro2); }
+.evento-nome { font-family: 'Playfair Display', serif; font-size: 19px; font-style: italic; color: var(--texto); margin-top: 9px; }
+.linha-ouro { width: 46px; height: 1px; background: linear-gradient(90deg, transparent, var(--ouro), transparent); margin: 9px auto; }
+.sessao-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ouro-dim); border: 1px solid var(--borda);
+  border-radius: 4px; padding: 5px 13px; margin-top: 7px;
+}
+.sessao-badge-label { font-family: 'Space Mono', monospace; font-size: 7px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+.sessao-badge-val { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--ouro); font-weight: 700; letter-spacing: 3px; }
+
+/* status */
+#statusMsg { text-align:center; font-size:14px; font-style:italic; color:var(--dim); min-height:22px; margin-bottom:18px; transition:color 0.3s; }
+#statusMsg.ok      { color: var(--verde); }
+#statusMsg.erro    { color: var(--vermelho); }
+#statusMsg.enviando{ color: var(--amarelo); }
+
+/* ws indicator */
+.ws-pill {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 18px;
+  padding: 5px 12px; border-radius: 20px; border: 1px solid; width: fit-content; margin-inline: auto;
+  transition: all 0.3s;
+}
+.ws-pill.conectado  { color: var(--verde); border-color: rgba(76,175,130,0.3); background: rgba(76,175,130,0.07); }
+.ws-pill.aguardando { color: var(--dim);   border-color: var(--borda2); }
+.ws-pill.erro       { color: var(--vermelho); border-color: rgba(224,82,82,0.3); background: rgba(224,82,82,0.07); }
+
+/* botão câmera */
+#btn-camera {
+  width: 100%; background: none; border: 1px solid var(--ouro); border-radius: 8px;
+  padding: 32px 20px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 11px;
+  margin-bottom: 22px; position: relative; overflow: hidden;
+  transition: all 0.3s; -webkit-tap-highlight-color: transparent;
+}
+#btn-camera::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at center, var(--ouro-dim) 0%, transparent 70%);
+  opacity: 0; transition: opacity 0.3s;
+}
+#btn-camera:active::before { opacity: 1; }
+#btn-camera:active { transform: scale(0.98); }
+#btn-camera.enviando { border-color: var(--amarelo); pointer-events: none; }
+.camera-icon { font-size: 44px; line-height: 1; filter: drop-shadow(0 0 10px rgba(201,168,76,0.3)); }
+.camera-label { font-family: 'Playfair Display', serif; font-size: 15px; font-style: italic; color: var(--ouro2); letter-spacing: 2px; }
+.camera-sub { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; }
+@keyframes shine { 0%{transform:translateX(-100%) skewX(-15deg);}100%{transform:translateX(300%) skewX(-15deg);} }
+.camera-shine { position:absolute;top:0;left:0;bottom:0;width:40%;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.06),transparent);animation:shine 3s ease infinite;pointer-events:none; }
+
+/* miniaturas */
+.miniaturas-titulo { font-family:'Space Mono',monospace;font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px; }
+.miniaturas-titulo::after { content:'';flex:1;height:1px;background:var(--borda2); }
+#grade-miniaturas { display:grid;grid-template-columns:repeat(4,1fr);gap:7px; }
+.miniatura { aspect-ratio:1;border-radius:4px;overflow:hidden;border:1px solid var(--borda2);position:relative;background:var(--escuro2); }
+.miniatura img { width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.5s; }
+.miniatura img.loaded { opacity:1; }
+.miniatura-ok { position:absolute;bottom:3px;right:3px;background:var(--verde);color:#fff;font-family:'Space Mono',monospace;font-size:6px;font-weight:700;padding:2px 4px;border-radius:2px;letter-spacing:1px; }
+.miniatura-spin { position:absolute;inset:0;display:flex;align-items:center;justify-content:center; }
+@keyframes spin { to{transform:rotate(360deg);} }
+.spin-icon { font-size:16px;animation:spin 1s linear infinite; }
+
+/* erro sessão */
+#tela-erro { display:none;text-align:center;padding:60px 20px; }
+.erro-icon { font-size:44px;margin-bottom:14px; }
+.erro-txt { font-size:14px;color:var(--dim);line-height:1.7;font-style:italic; }
+</style>
+</head>
+<body>
+
+<div id="tela-erro">
+  <div class="erro-icon">⚠️</div>
+  <div class="erro-txt">Link inválido ou sessão expirada.<br>Escaneie o QR Code novamente.</div>
+</div>
+
+<div class="wrap" id="conteudo">
+  <div class="header">
+    <div class="logo">Momento<em>∞</em></div>
+    <div class="evento-nome" id="nomeEventoMobile">—</div>
+    <div class="linha-ouro"></div>
+    <div class="sessao-badge">
+      <div class="sessao-badge-label">Sessão</div>
+      <div class="sessao-badge-val" id="sessaoIdDisplay">—</div>
+    </div>
+  </div>
+
+  <div class="ws-pill aguardando" id="wsPill">● Conectando...</div>
+  <p id="statusMsg">Toque para fotografar o momento ✨</p>
+
+  <button id="btn-camera" onclick="abrirCamera()">
+    <div class="camera-shine"></div>
+    <div class="camera-icon">📸</div>
+    <div class="camera-label">Fotografar Agora</div>
+    <div class="camera-sub">Toque para abrir a câmera</div>
+  </button>
+
+  <div class="miniaturas-titulo">Suas fotos enviadas</div>
+  <div id="grade-miniaturas"></div>
+</div>
+
+<input type="file" accept="image/*" capture="environment" id="cameraInput" style="display:none">
+
+<script>
+// ── PARAMS ────────────────────────────────────────────────────────────────────
+const params     = new URLSearchParams(location.search);
+const sessaoId   = params.get('sessao') || '';
+const nomeEvento = params.get('evento') || 'Momento Especial';
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let ws          = null;
+let wsReconect  = null;
+let enviando    = false;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!sessaoId) {
+    document.getElementById('conteudo').style.display = 'none';
+    document.getElementById('tela-erro').style.display = 'block';
+    return;
+  }
+
+  // valida sessão antes de conectar
+  try {
+    const res  = await fetch(`/api/sessao/${sessaoId}`);
+    const data = await res.json();
+    if (!data.success) throw new Error('inativa');
+  } catch {
+    document.getElementById('conteudo').style.display = 'none';
+    document.getElementById('tela-erro').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('sessaoIdDisplay').textContent = sessaoId;
+  document.getElementById('nomeEventoMobile').textContent = nomeEvento;
+  document.getElementById('cameraInput').addEventListener('change', processarFoto);
+
+  conectarWS();
+});
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function conectarWS() {
+  if (wsReconect) clearTimeout(wsReconect);
+  if (ws) ws.close();
+
+  const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  ws = new WebSocket(WS_URL);
+  setPill('aguardando', '● Conectando...');
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo: 'celular_conectado', sessaoId }));
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.tipo === 'ok')              setPill('conectado', '● Conectado à sessão');
+    if (msg.tipo === 'foto_ok')         {} // confirmação silenciosa
+    if (msg.tipo === 'sessao_encerrada') {
+      setPill('erro', '● Sessão encerrada');
+      setStatus('Sessão encerrada pelo organizador.', 'erro');
+      document.getElementById('btn-camera').style.pointerEvents = 'none';
+    }
+    if (msg.tipo === 'erro') {
+      setPill('erro', '● ' + msg.mensagem);
+      document.getElementById('conteudo').style.display = 'none';
+      document.getElementById('tela-erro').style.display = 'block';
+    }
+  };
+
+  ws.onclose = () => {
+    setPill('erro', '● Desconectado — reconectando...');
+    wsReconect = setTimeout(conectarWS, 3000);
+  };
+
+  ws.onerror = () => setPill('erro', '● Erro na conexão');
+}
+
+// ── CÂMERA ────────────────────────────────────────────────────────────────────
+function abrirCamera() {
+  if (enviando) return;
+  document.getElementById('cameraInput').value = '';
+  document.getElementById('cameraInput').click();
+}
+
+async function processarFoto(e) {
+  const file = e.target.files[0];
+  if (!file || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  enviando = true;
+  const fotoId  = `foto_${Date.now()}`;
+  const btn     = document.getElementById('btn-camera');
+
+  // cria miniatura com spinner
+  const mini = document.createElement('div');
+  mini.className = 'miniatura';
+  mini.innerHTML = `<div class="miniatura-spin"><div class="spin-icon">⟳</div></div>`;
+  document.getElementById('grade-miniaturas').prepend(mini);
+
+  btn.classList.add('enviando');
+  setStatus('⬆️ Comprimindo e enviando...', 'enviando');
+
+  try {
+    const dataUrl = await comprimirParaWebP(file);
+
+    // envia via WebSocket — chega na TV em ~100ms
+    ws.send(JSON.stringify({ tipo: 'foto', fotoId, dataUrl }));
+
+    // atualiza miniatura com preview local
+    mini.innerHTML = `
+      <img src="${dataUrl}" onload="this.classList.add('loaded')"/>
+      <div class="miniatura-ok">✔</div>
+    `;
+
+    setStatus('✨ Foto enviada! Apareceu na TV.', 'ok');
+    setTimeout(() => setStatus('Toque para fotografar mais momentos ✨', ''), 3000);
+
+  } catch (err) {
+    console.error(err);
+    mini.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:18px;">❌</div>`;
+    setStatus('Erro ao enviar. Tente novamente.', 'erro');
+    setTimeout(() => setStatus('Toque para fotografar o momento ✨', ''), 3000);
+  }
+
+  btn.classList.remove('enviando');
+  enviando = false;
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function setPill(tipo, texto) {
+  const el = document.getElementById('wsPill');
+  el.className = `ws-pill ${tipo}`;
+  el.textContent = texto;
+}
+
+function setStatus(msg, tipo) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className   = tipo || '';
+}
+
+function comprimirParaWebP(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = ev => {
+      const img = new Image();
+      img.src = ev.target.result;
+      img.onload = () => {
+        const MAX = 1200;
+        let w = img.width, h = img.height;
+        if (w > MAX) { h *= MAX / w; w = MAX; }
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/webp', 0.82));
+      };
+    };
+  });
+}
+</script>
+</body>
+</html>

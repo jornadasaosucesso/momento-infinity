@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MOMENTO∞ — TELA DO EVENTO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+
+<style>
+:root {
+  --ouro:      #c9a84c;
+  --ouro2:     #e8c97a;
+  --ouro-dim:  rgba(201,168,76,0.18);
+  --ouro-glow: rgba(201,168,76,0.35);
+  --escuro:    #0a0a0f;
+  --painel:    rgba(255,255,255,0.03);
+  --borda:     rgba(201,168,76,0.22);
+  --borda2:    rgba(201,168,76,0.08);
+  --texto:     #f0ead8;
+  --dim:       rgba(240,234,216,0.4);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--escuro); }
+
+body {
+  font-family: 'Cormorant Garamond', serif;
+  color: var(--texto);
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 0% 100%, rgba(201,168,76,0.04) 0%, transparent 60%);
+}
+body::after {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='1' height='1' fill='rgba(255,255,255,0.012)'/%3E%3C/svg%3E");
+  background-size: 4px 4px;
+}
+
+#app {
+  position: relative; z-index: 1;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* ── HEADER ── */
+#header {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 36px;
+  border-bottom: 1px solid var(--borda);
+  background: rgba(10,10,15,0.85);
+  backdrop-filter: blur(20px);
+}
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--ouro); letter-spacing: 5px;
+}
+.logo em { font-style: italic; font-weight: 400; color: var(--ouro2); font-size: 17px; }
+.header-mid { text-align: center; }
+.evento-nome {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px; font-style: italic; color: var(--texto); letter-spacing: 2px;
+}
+.evento-data {
+  font-family: 'Space Mono', monospace;
+  font-size: 9px; color: var(--dim); letter-spacing: 4px; text-transform: uppercase; margin-top: 3px;
+}
+.linha-ouro { width: 50px; height: 1px; background: linear-gradient(90deg, transparent, var(--ouro), transparent); margin: 5px auto; }
+.contador-wrap { text-align: right; }
+.contador-num { font-family: 'Space Mono', monospace; font-size: 34px; font-weight: 700; color: var(--ouro); line-height: 1; }
+.contador-label { font-size: 9px; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; }
+
+/* ── MOSAICO ── */
+#area-mosaico {
+  padding: 20px 24px 20px 36px;
+  display: flex; flex-direction: column; overflow: hidden;
+  position: relative;
+}
+#grade-fotos {
+  flex: 1;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  overflow: hidden;
+}
+.celula {
+  background: var(--painel);
+  border: 1px solid var(--borda2);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.celula img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  opacity: 0; transition: opacity 0.8s ease;
+}
+.celula img.carregada { opacity: 1; }
+.celula.destaque {
+  grid-column: 1 / 3; grid-row: 1 / 3;
+  border-color: var(--ouro);
+  box-shadow: 0 0 0 1px var(--ouro), 0 0 40px rgba(201,168,76,0.15);
+  z-index: 2;
+}
+.badge-nova {
+  position: absolute; top: 10px; right: 10px;
+  background: var(--ouro); color: #0a0a0f;
+  font-family: 'Space Mono', monospace;
+  font-size: 8px; font-weight: 700; letter-spacing: 2px;
+  padding: 4px 10px; border-radius: 2px; text-transform: uppercase;
+  animation: fadeOutBadge 3s ease forwards 2s; z-index: 3;
+}
+@keyframes fadeOutBadge { from { opacity:1; } to { opacity:0; pointer-events:none; } }
+.celula-vazia {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; opacity: 0.12;
+}
+.celula-vazia-icon { font-size: 18px; }
+.celula-vazia-num { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--ouro); letter-spacing: 2px; }
+@keyframes entradaFoto { from { opacity:0; transform:scale(0.93); } to { opacity:1; transform:scale(1); } }
+.celula.nova-entrada { animation: entradaFoto 0.55s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+/* ── PAINEL LATERAL ── */
+#painel-lateral {
+  border-left: 1px solid var(--borda);
+  background: rgba(10,10,15,0.6);
+  backdrop-filter: blur(12px);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 20px; gap: 18px;
+}
+.qr-titulo { font-family: 'Playfair Display', serif; font-size: 13px; font-style: italic; color: var(--ouro2); letter-spacing: 2px; text-align: center; }
+.qr-sub { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; text-align: center; margin-top: 3px; }
+#qr-box {
+  background: #fff; padding: 10px; border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--borda), 0 0 40px rgba(201,168,76,0.10);
+  position: relative;
+}
+#qr-box::before, #qr-box::after, .qr-corner-bl, .qr-corner-br {
+  content: ''; position: absolute; width: 13px; height: 13px; border-color: var(--ouro); border-style: solid;
+}
+#qr-box::before  { top:-1px; left:-1px;   border-width: 2px 0 0 2px; }
+#qr-box::after   { top:-1px; right:-1px;  border-width: 2px 2px 0 0; }
+.qr-corner-bl    { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
+.qr-corner-br    { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
+.sessao-id {
+  font-family: 'Space Mono', monospace; font-size: 11px; color: var(--ouro);
+  letter-spacing: 4px; text-align: center;
+  background: var(--ouro-dim); border: 1px solid var(--borda);
+  border-radius: 4px; padding: 7px 14px; width: 100%;
+}
+.instrucao { text-align: center; font-size: 13px; color: var(--dim); line-height: 1.7; font-style: italic; }
+.instrucao strong { color: var(--ouro2); font-style: normal; font-weight: 600; }
+.divider-ouro { width: 100%; display: flex; align-items: center; gap: 10px; }
+.divider-ouro::before { content:''; flex:1; height:1px; background: linear-gradient(90deg, transparent, var(--borda)); }
+.divider-ouro::after  { content:''; flex:1; height:1px; background: linear-gradient(270deg, transparent, var(--borda)); }
+.divider-ouro span { color: var(--ouro); font-size: 11px; flex-shrink: 0; }
+
+/* status WS */
+.ws-status {
+  font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 2px;
+  text-transform: uppercase; text-align: center; padding: 5px 10px;
+  border-radius: 3px; border: 1px solid; width: 100%;
+  transition: all 0.3s;
+}
+.ws-status.conectado  { color: #4caf82; border-color: rgba(76,175,130,0.3); background: rgba(76,175,130,0.08); }
+.ws-status.aguardando { color: var(--dim); border-color: var(--borda2); }
+.ws-status.erro       { color: #e05252; border-color: rgba(224,82,82,0.3); background: rgba(224,82,82,0.08); }
+
+#btn-nova-sessao {
+  width: 100%; background: none; border: 1px solid var(--borda);
+  color: var(--dim); padding: 9px; border-radius: 4px; cursor: pointer;
+  font-family: 'Space Mono', monospace; font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; transition: all 0.2s; margin-top: auto;
+}
+#btn-nova-sessao:hover { border-color: var(--ouro); color: var(--ouro); background: var(--ouro-dim); }
+
+/* ── FOOTER ── */
+#footer {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 36px; border-top: 1px solid var(--borda2);
+  background: rgba(10,10,15,0.9);
+}
+.footer-info { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--dim); letter-spacing: 2px; }
+.footer-info strong { color: var(--ouro); }
+
+/* ── OVERLAY AGUARDANDO ── */
+#tela-aguardando {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; z-index: 10;
+  background: rgba(10,10,15,0.92); backdrop-filter: blur(4px);
+  transition: opacity 0.8s ease;
+}
+#tela-aguardando.oculto { opacity: 0; pointer-events: none; }
+.aguardando-titulo { font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic; color: var(--dim); letter-spacing: 2px; text-align: center; }
+@keyframes pulse { 0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);} }
+.aguardando-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--ouro); animation: pulse 2s ease infinite; }
+
+/* ── FLASH ── */
+#flash { position:fixed;inset:0;z-index:9999;background:rgba(201,168,76,0.07);pointer-events:none;opacity:0;transition:opacity 0.1s; }
+#flash.on { opacity:1; }
+
+/* ── NOTIFICAÇÃO ── */
+#notif {
+  position:fixed;bottom:56px;left:50%;transform:translateX(-50%) translateY(16px);
+  background:rgba(10,10,15,0.95);border:1px solid var(--ouro);border-radius:5px;
+  padding:10px 22px;font-family:'Cormorant Garamond',serif;font-size:14px;
+  color:var(--ouro2);letter-spacing:2px;font-style:italic;
+  opacity:0;transition:all 0.4s cubic-bezier(0.22,1,0.36,1);pointer-events:none;z-index:100;white-space:nowrap;
+}
+#notif.show { opacity:1;transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+<div id="notif">📸 Nova foto adicionada</div>
+
+<div id="app">
+
+  <header id="header">
+    <div class="logo">Momento<em>∞</em></div>
+    <div class="header-mid">
+      <div class="evento-nome" id="nomeEvento">—</div>
+      <div class="linha-ouro"></div>
+      <div class="evento-data" id="dataEvento">—</div>
+    </div>
+    <div class="contador-wrap">
+      <div class="contador-num" id="contadorNum">0</div>
+      <div class="contador-label">fotos capturadas</div>
+    </div>
+  </header>
+
+  <main id="area-mosaico">
+    <div id="grade-fotos"></div>
+    <div id="tela-aguardando">
+      <div class="aguardando-titulo">Aguardando as primeiras fotos...</div>
+      <div class="linha-ouro"></div>
+      <div class="aguardando-titulo" style="font-size:12px;">Escaneie o QR Code ao lado →</div>
+      <div class="aguardando-pulse"></div>
+    </div>
+  </main>
+
+  <aside id="painel-lateral">
+    <div>
+      <div class="qr-titulo">Fotografe o Momento</div>
+      <div class="qr-sub">Aponte a câmera para participar</div>
+    </div>
+    <div style="position:relative;">
+      <div id="qr-box">
+        <div class="qr-corner-bl"></div>
+        <div class="qr-corner-br"></div>
+      </div>
+    </div>
+    <div class="sessao-id" id="sessaoIdDisplay">— — — —</div>
+    <div class="ws-status aguardando" id="wsStatus">● Conectando...</div>
+    <div class="divider-ouro"><span>✦</span></div>
+    <p class="instrucao">
+      Use qualquer celular.<br>
+      <strong>Sem app necessário.</strong><br>
+      Fotos aparecem aqui<br>em tempo real. ✨
+    </p>
+    <div class="divider-ouro"><span>✦</span></div>
+    <button id="btn-nova-sessao" onclick="novaSessao()">↺ Nova Sessão</button>
+  </aside>
+
+  <footer id="footer">
+    <div class="footer-info">SESSÃO: <strong id="footerSessao">—</strong></div>
+    <div class="footer-info">EVENTO: <strong id="footerEvento">—</strong></div>
+    <div class="footer-info">POWERED BY <strong>MOMENTO∞</strong></div>
+  </footer>
+
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const params     = new URLSearchParams(location.search);
+const sessaoIdParam = params.get('sessao') || null;
+
+// URL WebSocket — mesmo host do servidor
+const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+
+// ── ESTADO ────────────────────────────────────────────────────────────────────
+let sessaoId   = null;
+let ws         = null;
+let fotos      = [];
+let wsReconect = null;
+
+// ── SLOTS DA GRADE ────────────────────────────────────────────────────────────
+const SLOTS = [
+  { col:'1/3', row:'1/3', destaque:true  },
+  { col:'3',   row:'1'   },
+  { col:'4',   row:'1'   },
+  { col:'3',   row:'2'   },
+  { col:'4',   row:'2'   },
+  { col:'1',   row:'3'   },
+  { col:'2',   row:'3'   },
+  { col:'3',   row:'3'   },
+  { col:'4',   row:'3'   },
+];
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('dataEvento').textContent =
+    new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+
+  if (sessaoIdParam) {
+    // TV abriu com sessão na URL — valida e conecta
+    await carregarSessao(sessaoIdParam);
+  } else {
+    // TV abriu sem sessão — cria uma nova
+    await novaSessao();
+  }
+});
+
+// ── CRIAR / CARREGAR SESSÃO ───────────────────────────────────────────────────
+async function novaSessao() {
+  if (ws) { ws.close(); ws = null; }
+
+  const nomeEvento = document.getElementById('nomeEvento').textContent;
+  const nome = nomeEvento === '—' ? 'Nosso Evento' : nomeEvento;
+
+  const res  = await fetch('/api/sessao/nova', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nomeEvento: nome }),
+  });
+  const data = await res.json();
+  if (!data.success) { console.error('Erro ao criar sessão', data); return; }
+
+  fotos = [];
+  sessaoId = data.sessaoId;
+  aplicarSessao(data.sessaoId, data.nomeEvento, data.urls.camera);
+  conectarWS();
+}
+
+async function carregarSessao(id) {
+  const res  = await fetch(`/api/sessao/${id}`);
+  const data = await res.json();
+  if (!data.success) { await novaSessao(); return; }
+
+  sessaoId = id;
+  const baseUrl  = location.origin;
+  const urlCamera = `${baseUrl}/camera_evento.html?sessao=${id}&evento=${encodeURIComponent(data.nomeEvento)}`;
+  aplicarSessao(id, data.nomeEvento, urlCamera);
+  conectarWS();
+}
+
+function aplicarSessao(id, nomeEvento, urlCamera) {
+  document.getElementById('nomeEvento').textContent    = nomeEvento;
+  document.getElementById('footerEvento').textContent  = nomeEvento;
+  document.getElementById('sessaoIdDisplay').textContent = id;
+  document.getElementById('footerSessao').textContent  = id;
+  document.getElementById('contadorNum').textContent   = '0';
+
+  // gera QR
+  const qrBox = document.getElementById('qr-box');
+  [...qrBox.children].forEach(c => {
+    if (!c.classList.contains('qr-corner-bl') && !c.classList.contains('qr-corner-br')) c.remove();
+  });
+  const qrDiv = document.createElement('div');
+  qrBox.insertBefore(qrDiv, qrBox.querySelector('.qr-corner-bl'));
+  new QRCode(qrDiv, { text: urlCamera, width: 210, height: 210, colorDark: '#0a0a0f', colorLight: '#ffffff' });
+
+  construirGrade();
+  document.getElementById('tela-aguardando').classList.remove('oculto');
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function conectarWS() {
+  if (wsReconect) clearTimeout(wsReconect);
+  if (ws) ws.close();
+
+  ws = new WebSocket(WS_URL);
+  setWsStatus('aguardando', '● Conectando...');
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo: 'tv_conectada', sessaoId }));
+    setWsStatus('conectado', '● TV conectada');
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.tipo === 'foto') {
+      adicionarFoto(msg.dataUrl);
+    }
+    if (msg.tipo === 'sessao_encerrada') {
+      setWsStatus('aguardando', '● Sessão encerrada');
+    }
+  };
+
+  ws.onclose = () => {
+    setWsStatus('erro', '● Desconectado — reconectando...');
+    wsReconect = setTimeout(conectarWS, 3000);
+  };
+
+  ws.onerror = () => setWsStatus('erro', '● Erro na conexão');
+}
+
+function setWsStatus(tipo, texto) {
+  const el = document.getElementById('wsStatus');
+  el.className = `ws-status ${tipo}`;
+  el.textContent = texto;
+}
+
+// ── GRADE ─────────────────────────────────────────────────────────────────────
+function construirGrade() {
+  const grade = document.getElementById('grade-fotos');
+  grade.innerHTML = '';
+  SLOTS.forEach((s, i) => {
+    const cel = document.createElement('div');
+    cel.className = 'celula' + (s.destaque ? ' destaque' : '');
+    cel.id = `slot-${i}`;
+    cel.style.gridColumn = s.col;
+    if (s.row) cel.style.gridRow = s.row;
+    cel.innerHTML = `<div class="celula-vazia"><div class="celula-vazia-icon">✦</div><div class="celula-vazia-num">${String(i+1).padStart(2,'0')}</div></div>`;
+    grade.appendChild(cel);
+  });
+}
+
+function adicionarFoto(dataUrl) {
+  document.getElementById('tela-aguardando').classList.add('oculto');
+  fotos.push(dataUrl);
+  document.getElementById('contadorNum').textContent = fotos.length;
+  dispararFlash();
+  mostrarNotif('📸 Nova foto adicionada ao mosaico');
+  redistribuir();
+}
+
+function redistribuir() {
+  const invertidas = [...fotos].reverse();
+  SLOTS.forEach((_, i) => {
+    const cel     = document.getElementById(`slot-${i}`);
+    const fotoUrl = invertidas[i] || null;
+
+    if (fotoUrl) {
+      const imgExist = cel.querySelector('img');
+      if (imgExist && imgExist.dataset.url === fotoUrl) return;
+      cel.classList.add('nova-entrada');
+      cel.innerHTML = '';
+      if (i === 0) { const b = document.createElement('div'); b.className='badge-nova'; b.textContent='✦ Última'; cel.appendChild(b); }
+      const img = document.createElement('img');
+      img.dataset.url = fotoUrl;
+      img.onload = () => img.classList.add('carregada');
+      img.src = fotoUrl;
+      cel.appendChild(img);
+      setTimeout(() => cel.classList.remove('nova-entrada'), 600);
+    } else {
+      if (!cel.querySelector('img')) return;
+      cel.innerHTML = `<div class="celula-vazia"><div class="celula-vazia-icon">✦</div><div class="celula-vazia-num">${String(i+1).padStart(2,'0')}</div></div>`;
+    }
+  });
+}
+
+// ── EFEITOS ───────────────────────────────────────────────────────────────────
+function dispararFlash() {
+  const f = document.getElementById('flash');
+  f.classList.add('on');
+  setTimeout(() => f.classList.remove('on'), 140);
+}
+let notifTimer = null;
+function mostrarNotif(msg) {
+  const n = document.getElementById('notif');
+  n.textContent = msg;
+  n.classList.add('show');
+  if (notifTimer) clearTimeout(notifTimer);
+  notifTimer = setTimeout(() => n.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
+

@@ -1,0 +1,16 @@
+# Dependências
+node_modules/
+
+# Variáveis de ambiente — NUNCA subir pro repo
+.env
+
+# Chave privada Firebase — NUNCA subir pro repo
+config/firebase-key-momento.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
