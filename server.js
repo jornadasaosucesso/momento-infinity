@@ -153,12 +153,17 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
 
-    const ext = path.extname(req.file.originalname) || '.mp4';
-    const newName = `${sessaoId}_${videoId}.${ext}`;
+    let ext = path.extname(req.file.originalname);
+    if (!ext) ext = ".mp4";
+
+    const newName = `${sessaoId}_${videoId}${ext}`;
     const newPath = path.join(TMP_DIR, newName);
+
     fs.renameSync(req.file.path, newPath);
 
-    const baseUrl  = process.env.BASE_URL || `https://${req.headers.host}`;
+
+    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
+
     const videoUrl = `${baseUrl}/tmp_videos/${newName}`;
 
     console.log(`🎬 Vídeo ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
