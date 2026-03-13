@@ -16,40 +16,81 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 }
 .vlayer.ativo { opacity: 1; }
 
-/* ── TELA ATIVAR ── */
-#tela-ativar {
+/* ── TELA DE ESPERA (QR + botão ativar) ── */
+#tela-inicio {
   position: fixed; inset: 0; z-index: 50; background: #000;
+  display: flex; align-items: center; justify-content: center; gap: 80px;
+}
+#tela-inicio.oculto { display: none; }
+
+/* lado esquerdo — logo e botão */
+.inicio-esq {
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 32px;
+  align-items: flex-start; gap: 28px;
 }
 .logo {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 72px; letter-spacing: 14px; color: #fff;
-  text-shadow: 0 0 80px rgba(255,255,255,0.1);
+  font-size: 80px; letter-spacing: 16px; color: #fff;
+  text-shadow: 0 0 80px rgba(255,255,255,0.08);
+  line-height: 1;
 }
-.logo em { color: rgba(255,255,255,0.25); font-style: normal; }
-.sub-txt {
+.logo em { color: rgba(255,255,255,0.2); font-style: normal; }
+.logo-sub {
   font-family: 'Montserrat', sans-serif;
-  font-size: 10px; letter-spacing: 7px;
-  color: rgba(255,255,255,0.3); text-transform: uppercase;
+  font-size: 10px; letter-spacing: 8px;
+  color: rgba(255,255,255,0.25); text-transform: uppercase;
+  margin-top: -18px;
 }
 #btn-ativar {
   background: #fff; color: #000; border: none;
-  border-radius: 50px; padding: 18px 52px;
+  border-radius: 50px; padding: 16px 44px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 13px; font-weight: 700; letter-spacing: 5px;
+  font-size: 12px; font-weight: 700; letter-spacing: 5px;
   text-transform: uppercase; cursor: pointer;
-  transition: transform .2s, background .2s; margin-top: 12px;
+  transition: transform .2s, background .2s;
 }
-#btn-ativar:hover  { background: #e0e0e0; transform: scale(1.03); }
+#btn-ativar:hover  { background: #e8e8e8; transform: scale(1.03); }
 #btn-ativar:active { transform: scale(0.97); }
+#btn-ativar.ativado { background: #4caf82; color: #fff; pointer-events: none; }
 .ativar-hint {
   font-family: 'Montserrat', sans-serif;
-  font-size: 9px; letter-spacing: 3px;
-  color: rgba(255,255,255,0.2); text-transform: uppercase;
+  font-size: 8px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.18); text-transform: uppercase;
+  margin-top: -18px;
 }
 
-/* ── AGUARDANDO ── */
+/* lado direito — QR */
+.inicio-dir {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 14px;
+}
+#qr-box-inicio {
+  background: #fff; padding: 12px; border-radius: 6px;
+  box-shadow: 0 0 60px rgba(255,255,255,0.08);
+}
+.qr-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px; letter-spacing: 4px;
+  color: rgba(255,255,255,0.3); text-transform: uppercase; text-align: center;
+}
+.sessao-chip {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 18px; font-weight: 700; letter-spacing: 8px;
+  color: rgba(255,255,255,0.15); text-align: center;
+}
+#qr-loading {
+  width: 128px; height: 128px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qr-spinner {
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.1);
+  border-top-color: rgba(255,255,255,0.4);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── AGUARDANDO VÍDEO ── */
 #aguardando {
   position: fixed; inset: 0; z-index: 20; background: #000;
   display: none; flex-direction: column;
@@ -58,26 +99,20 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 }
 #aguardando.visivel { display: flex; }
 #aguardando.oculto  { opacity: 0; pointer-events: none; }
-.pulse {
-  width: 8px; height: 8px; border-radius: 50%;
-  background: #fff; opacity: 0.3; animation: pulse 2.2s ease infinite;
-}
-@keyframes pulse {
-  0%,100% { transform: scale(0.6); opacity: 0.15; }
-  50%      { transform: scale(1.4); opacity: 0.6; }
-}
+.ag-logo { font-family:'Bebas Neue',sans-serif; font-size:64px; letter-spacing:12px; color:#fff; }
+.ag-logo em { color:rgba(255,255,255,.2); font-style:normal; }
+.ag-sub  { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:6px; color:rgba(255,255,255,.25); text-transform:uppercase; }
+.pulse { width:7px; height:7px; border-radius:50%; background:#fff; opacity:.3; animation:pulse 2.2s ease infinite; }
+@keyframes pulse { 0%,100%{transform:scale(.6);opacity:.15;} 50%{transform:scale(1.4);opacity:.6;} }
 
-/* ── QR ── */
-#qr-area {
+/* ── QR MINI (durante o evento, canto direito) ── */
+#qr-mini {
   position: fixed; bottom: 60px; right: 24px; z-index: 30;
-  display: none; flex-direction: column; align-items: center; gap: 8px; opacity: 0.85;
+  display: none; flex-direction: column; align-items: center; gap: 6px; opacity: 0.7;
 }
-#qr-area.visivel { display: flex; }
-#qr-box { background: #fff; padding: 8px; border-radius: 4px; box-shadow: 0 4px 40px rgba(0,0,0,0.9); }
-.qr-txt {
-  font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 3px;
-  color: rgba(255,255,255,0.4); text-transform: uppercase; text-align: center;
-}
+#qr-mini.visivel { display: flex; }
+#qr-box-mini { background:#fff; padding:6px; border-radius:4px; box-shadow:0 4px 30px rgba(0,0,0,.9); }
+.qr-mini-txt { font-family:'Montserrat',sans-serif; font-size:7px; letter-spacing:2px; color:rgba(255,255,255,.3); text-transform:uppercase; }
 
 /* ── BADGE ── */
 #badge {
@@ -94,59 +129,67 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 /* ── BARRA STATUS ── */
 #status-bar {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-  background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
-  padding: 8px 20px; display: none;
-  align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+  padding: 7px 20px;
+  display: flex; align-items: center; justify-content: space-between;
   font-family: 'Montserrat', sans-serif; font-size: 9px;
   letter-spacing: 2px; text-transform: uppercase;
 }
-#status-bar.visivel { display: flex; }
-.sb-ws  { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.35); }
-.wsdot  { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all .3s; }
-.wsdot.verde    { background: #4caf82; box-shadow: 0 0 8px #4caf82; }
-.wsdot.amarelo  { background: #e8c040; }
-.wsdot.vermelho { background: #e05252; }
-.sb-msg { color: rgba(255,255,255,0.5); font-size: 9px; text-align: center; }
-.sb-sid { color: rgba(255,255,255,0.2); font-size: 8px; }
+.sb-ws  { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.3); }
+.wsdot  { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.2); transition:all .3s; }
+.wsdot.verde    { background:#4caf82; box-shadow:0 0 8px #4caf82; }
+.wsdot.amarelo  { background:#e8c040; }
+.wsdot.vermelho { background:#e05252; }
+.sb-msg { color:rgba(255,255,255,.45); font-size:9px; text-align:center; }
+.sb-sid { color:rgba(255,255,255,.18); font-size:8px; }
 
 /* ── FLASH ── */
-#flash { position: fixed; inset: 0; z-index: 25; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.07s; }
-#flash.on { opacity: 0.12; }
+#flash { position:fixed; inset:0; z-index:25; background:#fff; opacity:0; pointer-events:none; transition:opacity .07s; }
+#flash.on { opacity:.12; }
 </style>
 </head>
 <body>
 
 <div id="flash"></div>
 
-<div id="tela-ativar">
-  <div class="logo">Momento<em>∞</em></div>
-  <div class="sub-txt">Cinema ao vivo</div>
-  <button id="btn-ativar" onclick="ativar()">▶ Iniciar Cinema</button>
-  <div class="ativar-hint">Toque uma vez para ativar</div>
+<!-- TELA INICIAL: QR já visível + botão ativar -->
+<div id="tela-inicio">
+  <div class="inicio-esq">
+    <div>
+      <div class="logo">Momento<em>∞</em></div>
+      <div class="logo-sub">Cinema ao vivo</div>
+    </div>
+    <button id="btn-ativar" onclick="ativar()">▶ Iniciar Cinema</button>
+    <div class="ativar-hint">Clique uma vez para ativar reprodução</div>
+  </div>
+  <div class="inicio-dir">
+    <div id="qr-box-inicio"><div id="qr-loading"><div class="qr-spinner"></div></div></div>
+    <div class="qr-label">Escaneie para enviar vídeo</div>
+    <div class="sessao-chip" id="sessao-chip">—</div>
+  </div>
 </div>
 
+<!-- AGUARDANDO VÍDEO -->
 <div id="aguardando">
-  <div class="logo">Momento<em>∞</em></div>
-  <div class="sub-txt">Aguardando primeiro vídeo...</div>
+  <div class="ag-logo">Momento<em>∞</em></div>
+  <div class="ag-sub">Aguardando primeiro vídeo...</div>
   <div class="pulse"></div>
 </div>
 
 <video class="vlayer" id="videoA" playsinline muted loop></video>
 <video class="vlayer" id="videoB" playsinline muted loop></video>
 
-<div id="qr-area">
-  <div id="qr-box"></div>
-  <div class="qr-txt">Envie seu vídeo</div>
+<!-- QR mini durante o evento -->
+<div id="qr-mini">
+  <div id="qr-box-mini"></div>
+  <div class="qr-mini-txt">Envie seu vídeo</div>
 </div>
 
 <div id="badge">▶ Novo vídeo</div>
 
 <div id="status-bar">
-  <div class="sb-ws">
-    <div class="wsdot" id="wsdot"></div>
-    <span id="wstxt">conectando</span>
-  </div>
-  <div class="sb-msg" id="sb-msg">Aguardando...</div>
+  <div class="sb-ws"><div class="wsdot" id="wsdot"></div><span id="wstxt">iniciando</span></div>
+  <div class="sb-msg" id="sb-msg">Carregando sessão...</div>
   <div class="sb-sid">Sessão: <span id="sid">—</span></div>
 </div>
 
@@ -154,9 +197,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 <script>
 const params   = new URLSearchParams(location.search);
 const sidParam = params.get('sessao') || null;
-const WS_URL   = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+const WS_URL   = (location.protocol==='https:'?'wss://':'ws://')+location.host;
 
 let sessaoId  = null;
+let urlCamera = null;
 let ws        = null;
 let recon     = null;
 let camada    = 'A';
@@ -168,35 +212,11 @@ const vB = document.getElementById('videoB');
 
 function msg(txt) { document.getElementById('sb-msg').textContent = txt; }
 
-// ── ATIVAR — resolve bloqueio de autoplay ────────────────────────────────────
-async function ativar() {
-  ativado = true;
-  document.getElementById('tela-ativar').style.display = 'none';
-  document.getElementById('aguardando').classList.add('visivel');
-  document.getElementById('qr-area').classList.add('visivel');
-  document.getElementById('status-bar').classList.add('visivel');
-
-  // aquece os players para liberar autoplay futuro
-  try {
-    vA.muted = true; vB.muted = true;
-    await vA.play(); vA.pause(); vA.src = '';
-    await vB.play(); vB.pause(); vB.src = '';
-  } catch(e) { /* ok */ }
-
-  await init();
-
-  // processa vídeo que chegou antes do clique
-  if (videoFila.length > 0) {
-    const url = videoFila.shift();
-    videoFila = [];
-    setTimeout(() => tocarVideo(url), 600);
-  }
-}
-
-async function init() {
+// ── CARREGA SESSÃO E QR IMEDIATAMENTE ao abrir a página ──────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
   if (sidParam) await carregarSessao(sidParam);
   else          await novaSessao();
-}
+});
 
 async function novaSessao() {
   msg('Criando sessão...');
@@ -219,15 +239,59 @@ async function carregarSessao(id) {
   ligarWS(id);
 }
 
-function aplicar(id, urlCam) {
-  sessaoId = id;
-  document.getElementById('sid').textContent = id;
-  document.getElementById('qr-box').innerHTML = '';
-  new QRCode(document.getElementById('qr-box'), {
-    text: urlCam, width: 96, height: 96,
+function aplicar(id, camUrl) {
+  sessaoId  = id;
+  urlCamera = camUrl;
+  document.getElementById('sid').textContent       = id;
+  document.getElementById('sessao-chip').textContent = id;
+
+  // QR grande na tela de início
+  document.getElementById('qr-loading').style.display = 'none';
+  document.getElementById('qr-box-inicio').innerHTML = '';
+  new QRCode(document.getElementById('qr-box-inicio'), {
+    text: camUrl, width: 148, height: 148,
     colorDark:'#000', colorLight:'#fff'
   });
-  msg('Sessão ' + id + ' pronta — aguardando vídeos');
+
+  // QR mini para durante o evento
+  document.getElementById('qr-box-mini').innerHTML = '';
+  new QRCode(document.getElementById('qr-box-mini'), {
+    text: camUrl, width: 80, height: 80,
+    colorDark:'#000', colorLight:'#fff'
+  });
+
+  msg('Sessão ' + id + ' pronta — escaneie o QR e clique em Iniciar');
+}
+
+// ── ATIVAR (clique único — libera autoplay) ───────────────────────────────────
+async function ativar() {
+  ativado = true;
+  const btn = document.getElementById('btn-ativar');
+  btn.textContent = '✓ Ativado';
+  btn.classList.add('ativado');
+
+  // aquece players para liberar autoplay futuro
+  try {
+    vA.muted=true; vB.muted=true;
+    const s='data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQ=';
+    vA.src=s; await vA.play().catch(()=>{}); vA.pause(); vA.src='';
+    vB.src=s; await vB.play().catch(()=>{}); vB.pause(); vB.src='';
+  } catch(e) { /* ok */ }
+
+  // muda para tela de aguardando após 1s
+  setTimeout(() => {
+    document.getElementById('tela-inicio').classList.add('oculto');
+    document.getElementById('aguardando').classList.add('visivel');
+    document.getElementById('qr-mini').classList.add('visivel');
+    msg('Ativado ✓ — aguardando vídeos');
+  }, 800);
+
+  // processa vídeo que pode ter chegado antes do clique
+  if (videoFila.length > 0) {
+    const url = videoFila.shift();
+    videoFila = [];
+    setTimeout(() => tocarVideo(url), 1000);
+  }
 }
 
 // ── WEBSOCKET ─────────────────────────────────────────────────────────────────
@@ -240,25 +304,24 @@ function ligarWS(id) {
   ws.onopen = () => {
     ws.send(JSON.stringify({ tipo:'tv_conectada', sessaoId:id }));
     setWS('verde','ao vivo');
-    msg('Conectado ✓ — aguardando vídeos');
+    msg('Conectado ✓ — escaneie o QR para enviar vídeo');
   };
 
   ws.onmessage = (e) => {
-    let m;
-    try { m = JSON.parse(e.data); } catch { msg('Msg inválida recebida'); return; }
+    let m; try { m=JSON.parse(e.data); } catch { msg('Msg inválida'); return; }
 
     if (m.tipo === 'video') {
       if (!m.videoUrl) { msg('ERRO: videoUrl ausente'); return; }
-      msg('Vídeo chegou! ' + m.videoUrl.slice(-25));
+      msg('Vídeo recebido → ' + m.videoUrl.slice(-20));
       if (ativado) tocarVideo(m.videoUrl);
-      else { videoFila = [m.videoUrl]; msg('Vídeo na fila — toque em Iniciar'); }
+      else { videoFila=[m.videoUrl]; msg('Vídeo recebido — clique em Iniciar Cinema para exibir'); }
     }
-    if (m.tipo === 'sessao_encerrada') { setWS('vermelho','encerrada'); msg('Sessão encerrada'); }
+    if (m.tipo==='sessao_encerrada') { setWS('vermelho','encerrada'); msg('Sessão encerrada'); }
   };
 
   ws.onclose = () => {
     setWS('vermelho','reconectando');
-    msg('Conexão perdida — tentando em 3s...');
+    msg('Conexão perdida — reconectando...');
     recon = setTimeout(() => ligarWS(id), 3000);
   };
 }
@@ -268,37 +331,36 @@ function tocarVideo(videoUrl) {
   msg('Carregando vídeo...');
   document.getElementById('aguardando').classList.add('oculto');
 
-  const f = document.getElementById('flash');
-  f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 100);
+  const f=document.getElementById('flash');
+  f.classList.add('on'); setTimeout(()=>f.classList.remove('on'),100);
 
-  const b = document.getElementById('badge');
-  b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2800);
+  const b=document.getElementById('badge');
+  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
 
-  const prox = camada === 'A' ? vB : vA;
-  const ant  = camada === 'A' ? vA : vB;
+  const prox = camada==='A' ? vB : vA;
+  const ant  = camada==='A' ? vA : vB;
 
-  prox.src = videoUrl;
-  prox.load();
+  prox.src = videoUrl; prox.load();
 
   prox.oncanplay = () => {
     msg('Reproduzindo ▶');
     prox.play().then(() => {
       ant.classList.remove('ativo');
       prox.classList.add('ativo');
-      camada = camada === 'A' ? 'B' : 'A';
-      setTimeout(() => { ant.src = ''; ant.load(); }, 1200);
-    }).catch(err => msg('ERRO play(): ' + err.message));
+      camada = camada==='A' ? 'B' : 'A';
+      setTimeout(() => { ant.src=''; ant.load(); }, 1200);
+    }).catch(err => msg('ERRO play: ' + err.message));
   };
 
   prox.onerror = () => {
-    const er = prox.error;
-    msg('ERRO vídeo código ' + (er ? er.code : '?') + ': ' + (er ? er.message : 'desconhecido'));
+    const er=prox.error;
+    msg('ERRO vídeo cód.' + (er?er.code:'?') + ': ' + (er?er.message:'desconhecido'));
   };
 }
 
-function setWS(cor, txt) {
-  document.getElementById('wsdot').className = `wsdot ${cor}`;
-  document.getElementById('wstxt').textContent = txt;
+function setWS(cor,txt) {
+  document.getElementById('wsdot').className=`wsdot ${cor}`;
+  document.getElementById('wstxt').textContent=txt;
 }
 </script>
 </body>
