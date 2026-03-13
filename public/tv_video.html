@@ -4,7 +4,6 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MOMENTO∞ — CINEMA</title>
-<!-- mesma biblioteca que o tv.html usa e que funciona na Smart TV -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -13,7 +12,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 #player { position:fixed; inset:0; width:100%; height:100%; object-fit:cover; background:#000; display:none; }
 #player.visivel { display:block; }
 
-/* ── TELA INÍCIO ── */
 #tela-inicio { position:fixed; inset:0; z-index:50; background:#000; display:flex; align-items:center; justify-content:center; gap:80px; padding:60px; }
 #tela-inicio.oculto { display:none; }
 .col-esq { display:flex; flex-direction:column; gap:32px; }
@@ -26,13 +24,11 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 #btn-ativar.ok    { background:#4caf82; color:#fff; pointer-events:none; }
 .hint { font-size:10px; letter-spacing:2px; color:rgba(255,255,255,.2); text-transform:uppercase; }
 
-/* QR container — igual ao tv.html */
 #qr-box { background:#fff; padding:12px; border-radius:6px; display:inline-block; }
 #qr-box img, #qr-box canvas { display:block; }
 .qr-label { font-size:10px; letter-spacing:4px; color:rgba(255,255,255,.3); text-transform:uppercase; text-align:center; }
 #sid-big  { font-size:22px; font-weight:700; letter-spacing:10px; color:rgba(255,255,255,.2); text-align:center; }
 
-/* ── AGUARDANDO ── */
 #aguardando { position:fixed; inset:0; z-index:20; background:#000; display:none; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
 #aguardando.visivel { display:flex; }
 .ag-logo { font-size:64px; font-weight:900; letter-spacing:12px; }
@@ -41,18 +37,15 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 .pulse   { width:8px; height:8px; border-radius:50%; background:#fff; opacity:.3; animation:pulse 2s ease infinite; }
 @keyframes pulse { 0%,100%{transform:scale(.6);opacity:.15;} 50%{transform:scale(1.4);opacity:.6;} }
 
-/* ── QR MINI ── */
 #qr-mini-wrap { position:fixed; bottom:50px; right:20px; z-index:30; display:none; flex-direction:column; align-items:center; gap:6px; opacity:.75; }
 #qr-mini-wrap.visivel { display:flex; }
 #qr-mini-box { background:#fff; padding:6px; border-radius:4px; display:inline-block; }
 #qr-mini-box img, #qr-mini-box canvas { display:block; }
 .qr-mini-txt { font-size:8px; letter-spacing:2px; color:rgba(255,255,255,.3); text-transform:uppercase; }
 
-/* ── BADGE ── */
 #badge { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-60px); z-index:30; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:30px; padding:10px 28px; font-size:11px; letter-spacing:4px; text-transform:uppercase; pointer-events:none; transition:transform .5s cubic-bezier(.22,1,.36,1); }
 #badge.show { transform:translateX(-50%) translateY(0); }
 
-/* ── STATUS BAR ── */
 #status-bar { position:fixed; bottom:0; left:0; right:0; z-index:40; background:rgba(0,0,0,.9); padding:8px 20px; display:flex; align-items:center; justify-content:space-between; font-size:10px; letter-spacing:2px; text-transform:uppercase; }
 .sb-ws  { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.35); }
 .wsdot  { width:7px; height:7px; border-radius:50%; background:#555; }
@@ -65,7 +58,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 </head>
 <body>
 
-<!-- TELA INÍCIO -->
 <div id="tela-inicio">
   <div class="col-esq">
     <div>
@@ -82,7 +74,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
   </div>
 </div>
 
-<!-- AGUARDANDO -->
 <div id="aguardando">
   <div class="ag-logo">Momento<em>∞</em></div>
   <div class="ag-sub">Aguardando primeiro vídeo...</div>
@@ -91,7 +82,6 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; colo
 
 <video id="player" playsinline muted loop></video>
 
-<!-- QR MINI -->
 <div id="qr-mini-wrap">
   <div id="qr-mini-box"></div>
   <div class="qr-mini-txt">Envie seu vídeo</div>
@@ -182,41 +172,158 @@ async function ativar() {
 }
 
 function ligarWS(id) {
+
+  console.log("🔌 ligarWS iniciado para sessão:", id);
+
   if (recon) clearTimeout(recon);
-  try { if(ws) ws.close(); } catch(e){}
-  try { ws=new WebSocket(WS_URL); } catch(e){ msg('ERRO WS: '+e.message); recon=setTimeout(()=>ligarWS(id),5000); return; }
+
+  try { 
+    if(ws) ws.close(); 
+  } catch(e){
+    console.warn("⚠️ erro fechando ws antigo", e);
+  }
+
+  try { 
+    ws = new WebSocket(WS_URL); 
+    console.log("🌐 Tentando conectar WS:", WS_URL);
+  } catch(e){ 
+    msg('ERRO WS: '+e.message); 
+    console.error("❌ Falha ao criar websocket", e);
+    recon = setTimeout(()=>ligarWS(id),5000); 
+    return; 
+  }
+
   setWS('amarelo','conectando');
-  ws.onopen=()=>{ ws.send(JSON.stringify({tipo:'tv_conectada',sessaoId:id})); setWS('verde','ao vivo'); msg('Conectado ✓ — escaneie o QR'); };
-  ws.onmessage=(e)=>{
-    let m; try{m=JSON.parse(e.data);}catch{return;}
-    if (m.tipo==='video') {
-      if (!m.videoUrl) { msg('ERRO: videoUrl ausente'); return; }
-      msg('Vídeo chegou!');
-      if (ativado) tocarVideo(m.videoUrl);
-      else { videoFila=[m.videoUrl]; msg('Vídeo na fila — clique em Iniciar'); }
-    }
-    if (m.tipo==='sessao_encerrada') setWS('vermelho','encerrada');
+
+  ws.onopen = ()=>{
+
+    console.log("✅ WebSocket conectado");
+
+    ws.send(JSON.stringify({
+      tipo:'tv_conectada',
+      sessaoId:id
+    }));
+
+    console.log("📺 Identificação enviada para servidor");
+
+    setWS('verde','ao vivo');
+    msg('Conectado ✓ — escaneie o QR');
+
   };
-  ws.onerror=()=>{ msg('ERRO WebSocket'); setWS('vermelho','erro'); };
-  ws.onclose=(e)=>{ setWS('vermelho','reconectando'); msg('Reconectando... cód.'+e.code); recon=setTimeout(()=>ligarWS(id),3000); };
+
+  ws.onmessage = (e)=>{
+
+    console.log("📩 Mensagem recebida:", e.data);
+
+    let m;
+
+    try{
+      m = JSON.parse(e.data);
+    }catch(err){
+      console.error("❌ erro parse JSON", err);
+      return;
+    }
+
+    console.log("📦 tipo:", m.tipo);
+
+    if (m.tipo === 'video') {
+
+      console.log("🎬 Evento VIDEO recebido");
+      console.log("URL:", m.videoUrl);
+
+      if (!m.videoUrl) { 
+        msg('ERRO: videoUrl ausente'); 
+        console.error("❌ videoUrl ausente no payload");
+        return; 
+      }
+
+      msg('Vídeo chegou!');
+
+      if (ativado) {
+        console.log("▶️ Sistema ativado → chamando tocarVideo()");
+        tocarVideo(m.videoUrl);
+      }
+      else {
+        console.log("⏸ Sistema ainda não ativado → fila");
+        videoFila = [m.videoUrl];
+        msg('Vídeo na fila — clique em Iniciar');
+      }
+
+    }
+
+    if (m.tipo === 'sessao_encerrada') {
+      console.log("🔒 Sessão encerrada pelo servidor");
+      setWS('vermelho','encerrada');
+    }
+
+  };
+
+  ws.onerror = (err)=>{
+    console.error("💥 ERRO WEBSOCKET", err);
+    msg('ERRO WebSocket');
+    setWS('vermelho','erro');
+  };
+
+  ws.onclose = (e)=>{
+    console.warn("🔌 WS fechado", e.code);
+    setWS('vermelho','reconectando');
+    msg('Reconectando... cód.'+e.code);
+    recon = setTimeout(()=>ligarWS(id),3000);
+  };
+
 }
 
 function tocarVideo(videoUrl) {
+
   msg('Carregando vídeo...');
+
   document.getElementById('aguardando').style.display='none';
-  const b=document.getElementById('badge');
-  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
+
+  const b = document.getElementById('badge');
+  b.classList.add('show');
+  setTimeout(()=>b.classList.remove('show'),2800);
+
+  console.log("🎬 tocarVideo()");
+  console.log("URL:", videoUrl);
+
   player.pause();
-  player.removeAttribute('src'); player.load();
+  player.removeAttribute('src');
+  player.load();
+
   setTimeout(()=>{
-    player.muted=true; player.loop=true;
-    player.src=videoUrl; player.load();
-    player.oncanplay=()=>{
+
+    player.muted = true;
+    player.loop = true;
+    player.crossOrigin = "anonymous";
+
+    player.src = videoUrl;
+
+    console.log("📡 SRC definido:", player.src);
+
+    player.load();
+
+    player.onloadedmetadata = ()=>{
+      console.log("📊 metadata carregada");
+
       player.classList.add('visivel');
-      player.play().then(()=>msg('Reproduzindo ▶')).catch(err=>msg('ERRO play: '+err.name+' — '+err.message));
+
+      player.play()
+      .then(()=>msg('Reproduzindo ▶'))
+      .catch(err=>{
+        console.error("💥 play erro", err);
+        msg('ERRO play: '+err.name+' — '+err.message);
+      });
+
     };
-    player.onerror=()=>{ const er=player.error; msg('ERRO vídeo cód.'+(er?er.code:'?')); };
-  }, 200);
+
+    player.onerror = ()=>{
+      const er = player.error;
+      console.error("💥 erro vídeo", er);
+      msg('ERRO vídeo cód.'+(er ? er.code : '?'));
+    };
+
+  },200);
+
 }
 
 function setWS(cor,txt){ document.getElementById('wsdot').className='wsdot '+cor; document.getElementById('wstxt').textContent=txt; }
