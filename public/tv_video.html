@@ -9,127 +9,130 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-/* ── DOIS LAYERS PARA CROSS-FADE ── */
 .vlayer {
-  position: fixed; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover;
-  opacity: 0;
-  transition: opacity 0.9s ease;
-  background: #000;
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0;
+  transition: opacity 0.9s ease; background: #000;
 }
 .vlayer.ativo { opacity: 1; }
 
-/* ── AGUARDANDO ── */
-#aguardando {
-  position: fixed; inset: 0; z-index: 20;
-  background: #000;
+/* ── TELA ATIVAR ── */
+#tela-ativar {
+  position: fixed; inset: 0; z-index: 50; background: #000;
   display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 24px;
-  transition: opacity 1.2s ease;
+  align-items: center; justify-content: center; gap: 32px;
 }
-#aguardando.oculto { opacity: 0; pointer-events: none; }
-
 .logo {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 72px; letter-spacing: 14px; color: #fff;
   text-shadow: 0 0 80px rgba(255,255,255,0.1);
 }
 .logo em { color: rgba(255,255,255,0.25); font-style: normal; }
-.logo-sub {
+.sub-txt {
   font-family: 'Montserrat', sans-serif;
   font-size: 10px; letter-spacing: 7px;
-  color: rgba(255,255,255,0.25); text-transform: uppercase;
+  color: rgba(255,255,255,0.3); text-transform: uppercase;
 }
+#btn-ativar {
+  background: #fff; color: #000; border: none;
+  border-radius: 50px; padding: 18px 52px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 5px;
+  text-transform: uppercase; cursor: pointer;
+  transition: transform .2s, background .2s; margin-top: 12px;
+}
+#btn-ativar:hover  { background: #e0e0e0; transform: scale(1.03); }
+#btn-ativar:active { transform: scale(0.97); }
+.ativar-hint {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 9px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.2); text-transform: uppercase;
+}
+
+/* ── AGUARDANDO ── */
+#aguardando {
+  position: fixed; inset: 0; z-index: 20; background: #000;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 24px;
+  transition: opacity 1.2s ease;
+}
+#aguardando.visivel { display: flex; }
+#aguardando.oculto  { opacity: 0; pointer-events: none; }
 .pulse {
   width: 8px; height: 8px; border-radius: 50%;
-  background: #fff; opacity: 0.3;
-  animation: pulse 2.2s ease infinite;
+  background: #fff; opacity: 0.3; animation: pulse 2.2s ease infinite;
 }
 @keyframes pulse {
   0%,100% { transform: scale(0.6); opacity: 0.15; }
   50%      { transform: scale(1.4); opacity: 0.6; }
 }
 
-/* ── QR CANTO ── */
+/* ── QR ── */
 #qr-area {
-  position: fixed; bottom: 24px; right: 24px; z-index: 30;
-  display: flex; flex-direction: column; align-items: center; gap: 8px;
-  opacity: 0.8;
+  position: fixed; bottom: 60px; right: 24px; z-index: 30;
+  display: none; flex-direction: column; align-items: center; gap: 8px; opacity: 0.85;
 }
+#qr-area.visivel { display: flex; }
 #qr-box { background: #fff; padding: 8px; border-radius: 4px; box-shadow: 0 4px 40px rgba(0,0,0,0.9); }
 .qr-txt {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 8px; letter-spacing: 3px;
+  font-family: 'Montserrat', sans-serif; font-size: 8px; letter-spacing: 3px;
   color: rgba(255,255,255,0.4); text-transform: uppercase; text-align: center;
 }
 
 /* ── BADGE ── */
 #badge {
   position: fixed; top: 24px; left: 50%;
-  transform: translateX(-50%) translateY(-70px);
-  z-index: 30;
+  transform: translateX(-50%) translateY(-70px); z-index: 30;
   background: rgba(255,255,255,0.08); backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: 40px;
-  padding: 10px 30px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px; letter-spacing: 5px;
-  color: rgba(255,255,255,0.85); text-transform: uppercase;
-  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.15); border-radius: 40px; padding: 10px 30px;
+  font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 5px;
+  color: rgba(255,255,255,0.85); text-transform: uppercase; pointer-events: none;
   transition: transform 0.55s cubic-bezier(0.22,1,0.36,1);
 }
 #badge.show { transform: translateX(-50%) translateY(0); }
 
-/* ── WS STATUS ── */
-#ws-info {
-  position: fixed; top: 20px; left: 24px; z-index: 30;
-  display: flex; align-items: center; gap: 7px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 8px; letter-spacing: 2px;
-  color: rgba(255,255,255,0.2); text-transform: uppercase;
+/* ── BARRA STATUS ── */
+#status-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+  background: rgba(0,0,0,0.75); backdrop-filter: blur(8px);
+  padding: 8px 20px; display: none;
+  align-items: center; justify-content: space-between;
+  font-family: 'Montserrat', sans-serif; font-size: 9px;
+  letter-spacing: 2px; text-transform: uppercase;
 }
-.wsdot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.15); transition: all 0.3s; }
+#status-bar.visivel { display: flex; }
+.sb-ws  { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.35); }
+.wsdot  { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all .3s; }
 .wsdot.verde    { background: #4caf82; box-shadow: 0 0 8px #4caf82; }
 .wsdot.amarelo  { background: #e8c040; }
 .wsdot.vermelho { background: #e05252; }
-
-/* ── SESSÃO ── */
-#sessao-info {
-  position: fixed; bottom: 24px; left: 24px; z-index: 30;
-  font-family: 'Montserrat', monospace;
-  font-size: 8px; letter-spacing: 3px;
-  color: rgba(255,255,255,0.15); text-transform: uppercase;
-}
+.sb-msg { color: rgba(255,255,255,0.5); font-size: 9px; text-align: center; }
+.sb-sid { color: rgba(255,255,255,0.2); font-size: 8px; }
 
 /* ── FLASH ── */
-#flash {
-  position: fixed; inset: 0; z-index: 25;
-  background: #fff; opacity: 0; pointer-events: none;
-  transition: opacity 0.07s;
-}
+#flash { position: fixed; inset: 0; z-index: 25; background: #fff; opacity: 0; pointer-events: none; transition: opacity 0.07s; }
 #flash.on { opacity: 0.12; }
-
-/* ── DEBUG (canto topo direito, some depois de 5s) ── */
-#debug {
-  position: fixed; top: 20px; right: 24px; z-index: 50;
-  font-family: monospace; font-size: 10px;
-  color: rgba(255,255,255,0.4);
-  text-align: right; max-width: 300px;
-}
 </style>
 </head>
 <body>
 
 <div id="flash"></div>
 
+<div id="tela-ativar">
+  <div class="logo">Momento<em>∞</em></div>
+  <div class="sub-txt">Cinema ao vivo</div>
+  <button id="btn-ativar" onclick="ativar()">▶ Iniciar Cinema</button>
+  <div class="ativar-hint">Toque uma vez para ativar</div>
+</div>
+
 <div id="aguardando">
   <div class="logo">Momento<em>∞</em></div>
-  <div class="logo-sub">Cinema ao vivo</div>
+  <div class="sub-txt">Aguardando primeiro vídeo...</div>
   <div class="pulse"></div>
 </div>
 
-<video class="vlayer" id="videoA" playsinline autoplay muted loop></video>
-<video class="vlayer" id="videoB" playsinline autoplay muted loop></video>
+<video class="vlayer" id="videoA" playsinline muted loop></video>
+<video class="vlayer" id="videoB" playsinline muted loop></video>
 
 <div id="qr-area">
   <div id="qr-box"></div>
@@ -138,13 +141,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 
 <div id="badge">▶ Novo vídeo</div>
 
-<div id="ws-info">
-  <div class="wsdot" id="wsdot"></div>
-  <span id="wstxt">conectando</span>
+<div id="status-bar">
+  <div class="sb-ws">
+    <div class="wsdot" id="wsdot"></div>
+    <span id="wstxt">conectando</span>
+  </div>
+  <div class="sb-msg" id="sb-msg">Aguardando...</div>
+  <div class="sb-sid">Sessão: <span id="sid">—</span></div>
 </div>
-
-<div id="sessao-info">Sessão: <span id="sid">—</span></div>
-<div id="debug"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
 <script>
@@ -152,38 +156,62 @@ const params   = new URLSearchParams(location.search);
 const sidParam = params.get('sessao') || null;
 const WS_URL   = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
 
-let sessaoId = null;
-let ws       = null;
-let recon    = null;
-let camada   = 'A';
+let sessaoId  = null;
+let ws        = null;
+let recon     = null;
+let camada    = 'A';
+let ativado   = false;
+let videoFila = [];
 
 const vA = document.getElementById('videoA');
 const vB = document.getElementById('videoB');
 
-function dbg(msg) {
-  const el = document.getElementById('debug');
-  el.textContent = msg;
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.textContent = '', 8000);
+function msg(txt) { document.getElementById('sb-msg').textContent = txt; }
+
+// ── ATIVAR — resolve bloqueio de autoplay ────────────────────────────────────
+async function ativar() {
+  ativado = true;
+  document.getElementById('tela-ativar').style.display = 'none';
+  document.getElementById('aguardando').classList.add('visivel');
+  document.getElementById('qr-area').classList.add('visivel');
+  document.getElementById('status-bar').classList.add('visivel');
+
+  // aquece os players para liberar autoplay futuro
+  try {
+    vA.muted = true; vB.muted = true;
+    await vA.play(); vA.pause(); vA.src = '';
+    await vB.play(); vB.pause(); vB.src = '';
+  } catch(e) { /* ok */ }
+
+  await init();
+
+  // processa vídeo que chegou antes do clique
+  if (videoFila.length > 0) {
+    const url = videoFila.shift();
+    videoFila = [];
+    setTimeout(() => tocarVideo(url), 600);
+  }
 }
 
-window.addEventListener('DOMContentLoaded', async () => {
+async function init() {
   if (sidParam) await carregarSessao(sidParam);
   else          await novaSessao();
-});
+}
 
 async function novaSessao() {
+  msg('Criando sessão...');
   const r = await fetch('/api/sessao/nova', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nomeEvento: 'Cinema Momento∞' })
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ nomeEvento:'Cinema Momento∞' })
   });
   const d = await r.json();
-  if (!d.success) { dbg('ERRO: falha ao criar sessão'); return; }
+  if (!d.success) { msg('ERRO ao criar sessão'); return; }
   aplicar(d.sessaoId, d.urls.camera_video);
   ligarWS(d.sessaoId);
 }
 
 async function carregarSessao(id) {
+  msg('Carregando sessão ' + id + '...');
   const r = await fetch(`/api/sessao/${id}`);
   const d = await r.json();
   if (!d.success) { await novaSessao(); return; }
@@ -197,74 +225,75 @@ function aplicar(id, urlCam) {
   document.getElementById('qr-box').innerHTML = '';
   new QRCode(document.getElementById('qr-box'), {
     text: urlCam, width: 96, height: 96,
-    colorDark: '#000', colorLight: '#fff'
+    colorDark:'#000', colorLight:'#fff'
   });
-  dbg('Sessão: ' + id);
+  msg('Sessão ' + id + ' pronta — aguardando vídeos');
 }
 
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
 function ligarWS(id) {
   if (recon) clearTimeout(recon);
   if (ws)    ws.close();
   ws = new WebSocket(WS_URL);
-  setWS('amarelo', 'conectando');
+  setWS('amarelo','conectando');
 
   ws.onopen = () => {
-    ws.send(JSON.stringify({ tipo: 'tv_conectada', sessaoId: id }));
-    setWS('verde', 'ao vivo');
-    dbg('WS conectado — aguardando vídeo');
+    ws.send(JSON.stringify({ tipo:'tv_conectada', sessaoId:id }));
+    setWS('verde','ao vivo');
+    msg('Conectado ✓ — aguardando vídeos');
   };
 
   ws.onmessage = (e) => {
-    let msg;
-    try { msg = JSON.parse(e.data); } catch { dbg('msg inválida: ' + e.data.slice(0,80)); return; }
-    dbg('msg recebida: tipo=' + msg.tipo + (msg.videoUrl ? ' url='+msg.videoUrl.slice(-30) : ''));
+    let m;
+    try { m = JSON.parse(e.data); } catch { msg('Msg inválida recebida'); return; }
 
-    if (msg.tipo === 'video' && msg.videoUrl) tocarVideo(msg.videoUrl);
-    if (msg.tipo === 'sessao_encerrada') setWS('vermelho', 'encerrada');
+    if (m.tipo === 'video') {
+      if (!m.videoUrl) { msg('ERRO: videoUrl ausente'); return; }
+      msg('Vídeo chegou! ' + m.videoUrl.slice(-25));
+      if (ativado) tocarVideo(m.videoUrl);
+      else { videoFila = [m.videoUrl]; msg('Vídeo na fila — toque em Iniciar'); }
+    }
+    if (m.tipo === 'sessao_encerrada') { setWS('vermelho','encerrada'); msg('Sessão encerrada'); }
   };
 
   ws.onclose = () => {
-    setWS('vermelho', 'reconectando');
+    setWS('vermelho','reconectando');
+    msg('Conexão perdida — tentando em 3s...');
     recon = setTimeout(() => ligarWS(id), 3000);
   };
 }
 
+// ── REPRODUÇÃO ────────────────────────────────────────────────────────────────
 function tocarVideo(videoUrl) {
-  dbg('Tocando: ' + videoUrl.slice(-40));
-
+  msg('Carregando vídeo...');
   document.getElementById('aguardando').classList.add('oculto');
 
   const f = document.getElementById('flash');
-  f.classList.add('on');
-  setTimeout(() => f.classList.remove('on'), 100);
+  f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 100);
 
   const b = document.getElementById('badge');
-  b.classList.add('show');
-  setTimeout(() => b.classList.remove('show'), 2800);
+  b.classList.add('show'); setTimeout(() => b.classList.remove('show'), 2800);
 
-  if (camada === 'A') {
-    vB.src = videoUrl;
-    vB.load();
-    vB.oncanplay = () => {
-      vB.play().catch(e => dbg('play erro: ' + e.message));
-      vA.classList.remove('ativo');
-      vB.classList.add('ativo');
-      camada = 'B';
-      setTimeout(() => { vA.src = ''; }, 1200);
-    };
-    vB.onerror = (e) => dbg('video erro: ' + JSON.stringify(e.target.error));
-  } else {
-    vA.src = videoUrl;
-    vA.load();
-    vA.oncanplay = () => {
-      vA.play().catch(e => dbg('play erro: ' + e.message));
-      vB.classList.remove('ativo');
-      vA.classList.add('ativo');
-      camada = 'A';
-      setTimeout(() => { vB.src = ''; }, 1200);
-    };
-    vA.onerror = (e) => dbg('video erro: ' + JSON.stringify(e.target.error));
-  }
+  const prox = camada === 'A' ? vB : vA;
+  const ant  = camada === 'A' ? vA : vB;
+
+  prox.src = videoUrl;
+  prox.load();
+
+  prox.oncanplay = () => {
+    msg('Reproduzindo ▶');
+    prox.play().then(() => {
+      ant.classList.remove('ativo');
+      prox.classList.add('ativo');
+      camada = camada === 'A' ? 'B' : 'A';
+      setTimeout(() => { ant.src = ''; ant.load(); }, 1200);
+    }).catch(err => msg('ERRO play(): ' + err.message));
+  };
+
+  prox.onerror = () => {
+    const er = prox.error;
+    msg('ERRO vídeo código ' + (er ? er.code : '?') + ': ' + (er ? er.message : 'desconhecido'));
+  };
 }
 
 function setWS(cor, txt) {
