@@ -153,7 +153,7 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
 
-    const ext     = req.file.mimetype.includes('mp4') ? 'mp4' : 'webm';
+    const ext = path.extname(req.file.originalname) || '.mp4';
     const newName = `${sessaoId}_${videoId}.${ext}`;
     const newPath = path.join(TMP_DIR, newName);
     fs.renameSync(req.file.path, newPath);
