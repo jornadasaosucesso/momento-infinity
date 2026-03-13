@@ -303,7 +303,11 @@ function cortarVideo(file,maxS){
     v.onloadedmetadata=()=>{
       if(v.duration<=maxS){ resolve(file); return; }
       const stream=v.captureStream?v.captureStream():v.mozCaptureStream();
-      const rec=new MediaRecorder(stream);
+      const rec = new MediaRecorder(stream, {
+        mimeType: "video/webm;codecs=vp9",
+        videoBitsPerSecond: 8000000
+      });
+
       const chunks=[];
       rec.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
       rec.onstop=()=>resolve(new Blob(chunks,{type:'video/webm'}));

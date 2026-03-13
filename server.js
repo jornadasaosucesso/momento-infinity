@@ -56,9 +56,10 @@ app.use((req, res, next) => {
         "font-src 'self' https://fonts.gstatic.com data:;",
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;",
         "img-src 'self' data: blob:;",
-        "media-src 'self' blob: data:;",
+        "media-src 'self' https: blob: data:;",
         "connect-src 'self' ws: wss:;",
       ].join(' ');
+
   res.setHeader('Content-Security-Policy', csp);
   res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
   next();
