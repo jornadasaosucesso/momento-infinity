@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MOMENTO∞ — CINEMA</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+
+/* ── DOIS LAYERS DE VÍDEO PARA CROSS-FADE ── */
+.vlayer {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  background: #000;
+}
+.vlayer.ativo { opacity: 1; }
+
+/* ── TELA AGUARDANDO ── */
+#aguardando {
+  position: fixed; inset: 0; z-index: 20;
+  background: #000;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 24px;
+  transition: opacity 1.2s ease;
+}
+#aguardando.oculto { opacity: 0; pointer-events: none; }
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px; letter-spacing: 14px;
+  color: #fff;
+  text-shadow: 0 0 80px rgba(255,255,255,0.1);
+}
+.logo em { color: rgba(255,255,255,0.25); font-style: normal; }
+.logo-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px; letter-spacing: 7px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+.pulse {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #fff; opacity: 0.3;
+  animation: pulse 2.2s ease infinite;
+}
+@keyframes pulse {
+  0%,100% { transform: scale(0.6); opacity: 0.15; }
+  50%      { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* ── QR CANTO INFERIOR DIREITO ── */
+#qr-area {
+  position: fixed; bottom: 24px; right: 24px; z-index: 30;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  opacity: 0.8;
+}
+#qr-box {
+  background: #fff; padding: 8px; border-radius: 4px;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.9);
+}
+.qr-txt {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase; text-align: center;
+}
+
+/* ── BADGE NOVO VÍDEO ── */
+#badge {
+  position: fixed; top: 24px; left: 50%;
+  transform: translateX(-50%) translateY(-70px);
+  z-index: 30;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 40px;
+  padding: 10px 30px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px; letter-spacing: 5px;
+  color: rgba(255,255,255,0.85);
+  text-transform: uppercase;
+  pointer-events: none;
+  transition: transform 0.55s cubic-bezier(0.22,1,0.36,1);
+}
+#badge.show { transform: translateX(-50%) translateY(0); }
+
+/* ── STATUS WS TOPO ESQUERDO ── */
+#ws-info {
+  position: fixed; top: 20px; left: 24px; z-index: 30;
+  display: flex; align-items: center; gap: 7px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 8px; letter-spacing: 2px;
+  color: rgba(255,255,255,0.2);
+  text-transform: uppercase;
+}
+.wsdot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(255,255,255,0.15); transition: all 0.3s;
+}
+.wsdot.verde   { background: #4caf82; box-shadow: 0 0 8px #4caf82; }
+.wsdot.amarelo { background: #e8c040; }
+.wsdot.vermelho{ background: #e05252; }
+
+/* ── SESSÃO LABEL INFERIOR ESQUERDO ── */
+#sessao-info {
+  position: fixed; bottom: 24px; left: 24px; z-index: 30;
+  font-family: 'Montserrat', monospace;
+  font-size: 8px; letter-spacing: 3px;
+  color: rgba(255,255,255,0.15);
+  text-transform: uppercase;
+}
+
+/* ── FLASH AO TROCAR ── */
+#flash {
+  position: fixed; inset: 0; z-index: 25;
+  background: #fff; opacity: 0; pointer-events: none;
+  transition: opacity 0.07s;
+}
+#flash.on { opacity: 0.1; }
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div id="aguardando">
+  <div class="logo">Momento<em>∞</em></div>
+  <div class="logo-sub">Cinema ao vivo</div>
+  <div class="pulse"></div>
+</div>
+
+<video class="vlayer" id="videoA" playsinline autoplay muted loop></video>
+<video class="vlayer" id="videoB" playsinline autoplay muted loop></video>
+
+<div id="qr-area">
+  <div id="qr-box"></div>
+  <div class="qr-txt">Envie seu vídeo</div>
+</div>
+
+<div id="badge">▶ Novo vídeo</div>
+
+<div id="ws-info">
+  <div class="wsdot" id="wsdot"></div>
+  <span id="wstxt">conectando</span>
+</div>
+
+<div id="sessao-info">Sessão: <span id="sid">—</span></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<script>
+const params  = new URLSearchParams(location.search);
+const sidParam= params.get('sessao') || null;
+const WS_URL  = (location.protocol==='https:'?'wss://':'ws://') + location.host;
+
+let sessaoId = null;
+let ws       = null;
+let recon    = null;
+let camada   = 'A';
+
+const vA = document.getElementById('videoA');
+const vB = document.getElementById('videoB');
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (sidParam) await carregarSessao(sidParam);
+  else          await novaSessao();
+});
+
+async function novaSessao() {
+  const r = await fetch('/api/sessao/nova', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ nomeEvento:'Cinema Momento∞' })
+  });
+  const d = await r.json();
+  if (!d.success) return;
+  aplicar(d.sessaoId, d.urls.camera_video);
+  ligarWS(d.sessaoId);
+}
+
+async function carregarSessao(id) {
+  const r = await fetch(`/api/sessao/${id}`);
+  const d = await r.json();
+  if (!d.success) { await novaSessao(); return; }
+  aplicar(id, `${location.origin}/camera_video.html?sessao=${id}`);
+  ligarWS(id);
+}
+
+function aplicar(id, urlCam) {
+  sessaoId = id;
+  document.getElementById('sid').textContent = id;
+  document.getElementById('qr-box').innerHTML = '';
+  new QRCode(document.getElementById('qr-box'), {
+    text: urlCam, width: 96, height: 96,
+    colorDark:'#000', colorLight:'#fff'
+  });
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function ligarWS(id) {
+  if (recon) clearTimeout(recon);
+  if (ws)    ws.close();
+  ws = new WebSocket(WS_URL);
+  setWS('amarelo','conectando');
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo:'tv_conectada', sessaoId:id }));
+    setWS('verde','ao vivo');
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.tipo === 'video') tocarVideo(msg.dataUrl);
+    if (msg.tipo === 'sessao_encerrada') setWS('vermelho','encerrada');
+  };
+
+  ws.onclose = () => {
+    setWS('vermelho','reconectando');
+    recon = setTimeout(() => ligarWS(id), 3000);
+  };
+}
+
+// ── CROSS-FADE ────────────────────────────────────────────────────────────────
+function tocarVideo(dataUrl) {
+  // esconde tela aguardando
+  document.getElementById('aguardando').classList.add('oculto');
+
+  // flash
+  const f = document.getElementById('flash');
+  f.classList.add('on');
+  setTimeout(() => f.classList.remove('on'), 100);
+
+  // badge
+  const b = document.getElementById('badge');
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 2800);
+
+  if (camada === 'A') {
+    vB.src = dataUrl; vB.load();
+    vB.oncanplay = () => {
+      vB.play();
+      vA.classList.remove('ativo');
+      vB.classList.add('ativo');
+      camada = 'B';
+      setTimeout(() => { vA.src=''; }, 1200);
+    };
+  } else {
+    vA.src = dataUrl; vA.load();
+    vA.oncanplay = () => {
+      vA.play();
+      vB.classList.remove('ativo');
+      vA.classList.add('ativo');
+      camada = 'A';
+      setTimeout(() => { vB.src=''; }, 1200);
+    };
+  }
+}
+
+function setWS(cor, txt) {
+  document.getElementById('wsdot').className = `wsdot ${cor}`;
+  document.getElementById('wstxt').textContent = txt;
+}
+</script>
+</body>
+</html>

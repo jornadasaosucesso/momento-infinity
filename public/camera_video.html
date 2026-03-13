@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Momento∞ — Envie seu Vídeo</title>
+
+<script>
+(function(){
+  var ua = navigator.userAgent||'';
+  var wv = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|Snapchat/i.test(ua)
+        || (/iPhone|iPod|iPad/.test(ua) && !/Safari/.test(ua))
+        || (/Android/.test(ua) && /wv/.test(ua));
+  if(wv && /Android/i.test(ua)){
+    location.href='intent://'+location.href.replace(/https?:\/\//,'')+'#Intent;scheme=https;package=com.android.chrome;end';
+  }
+})();
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:     #0a0a0a;
+  --fg:     #f0f0f0;
+  --dim:    rgba(240,240,240,0.35);
+  --borda:  rgba(240,240,240,0.1);
+  --card:   rgba(240,240,240,0.05);
+  --verde:  #4caf82;
+  --amarel: #e8c040;
+  --verm:   #e05252;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { min-height:100%; background:var(--bg); color:var(--fg); }
+body { font-family:'Montserrat',sans-serif; padding-bottom:max(40px,env(safe-area-inset-bottom)); }
+
+/* fundo sutil */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none;
+  background:radial-gradient(ellipse 80% 40% at 50% 0%, rgba(255,255,255,0.025) 0%, transparent 70%);
+}
+
+.wrap { max-width:420px; margin:0 auto; padding:0 20px 40px; position:relative; z-index:1; }
+
+/* ── HEADER ── */
+.hdr { padding:30px 0 20px; text-align:center; border-bottom:1px solid var(--borda); margin-bottom:22px; }
+.logo { font-family:'Bebas Neue',sans-serif; font-size:34px; letter-spacing:9px; }
+.logo span { color:var(--dim); }
+.sub  { font-size:9px; letter-spacing:6px; color:var(--dim); text-transform:uppercase; margin-top:4px; }
+.badge-sessao {
+  display:inline-flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--borda);
+  border-radius:3px; padding:5px 14px; margin-top:12px;
+}
+.badge-label { font-size:7px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; }
+.badge-val   { font-size:13px; letter-spacing:5px; font-weight:700; }
+
+/* ── PILL WS ── */
+.pill {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  width:fit-content; margin:0 auto 18px;
+  padding:5px 16px; border-radius:20px; border:1px solid;
+  font-size:8px; letter-spacing:3px; text-transform:uppercase;
+  transition:all .3s;
+}
+.pill.verde   { color:var(--verde);  border-color:rgba(76,175,130,.3);  background:rgba(76,175,130,.06); }
+.pill.amarelo { color:var(--amarel); border-color:rgba(232,192,64,.3);  background:rgba(232,192,64,.06); }
+.pill.vermelho{ color:var(--verm);   border-color:rgba(224,82,82,.3);   background:rgba(224,82,82,.06); }
+
+/* ── STATUS ── */
+#status {
+  text-align:center; font-size:12px; color:var(--dim);
+  letter-spacing:1px; min-height:20px; margin-bottom:20px;
+  transition:color .3s;
+}
+#status.ok      { color:var(--verde); }
+#status.erro    { color:var(--verm); }
+#status.enviando{ color:var(--amarel); }
+
+/* ── AVISO LIMITE ── */
+.aviso-limite {
+  background:rgba(232,192,64,.05); border:1px solid rgba(232,192,64,.2);
+  border-radius:5px; padding:12px 16px; margin-bottom:18px;
+  font-size:11px; color:rgba(232,192,64,.8);
+  text-align:center; line-height:1.6; letter-spacing:.5px;
+}
+
+/* ── BOTÕES GRAVAR / GALERIA ── */
+.btns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+.btn-acao {
+  background:none; border:1px solid var(--borda); border-radius:6px;
+  padding:26px 12px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  transition:all .2s; -webkit-tap-highlight-color:transparent;
+  position:relative; overflow:hidden;
+}
+.btn-acao:active { transform:scale(.97); }
+.btn-acao:hover  { border-color:rgba(255,255,255,.25); background:var(--card); }
+.btn-icon  { font-size:38px; line-height:1; }
+.btn-label { font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--dim); font-weight:600; }
+.btn-sub   { font-size:8px; letter-spacing:1px; color:rgba(255,255,255,.18); }
+
+@keyframes shine { 0%{transform:translateX(-120%) skewX(-15deg);}100%{transform:translateX(350%) skewX(-15deg);} }
+.shine { position:absolute;top:0;left:0;bottom:0;width:35%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.035),transparent);animation:shine 4s ease infinite;pointer-events:none; }
+
+/* ── PROGRESS ── */
+#prog-wrap { display:none; margin-bottom:18px; }
+.prog-bar  { height:2px; background:var(--borda); border-radius:1px; overflow:hidden; margin-bottom:6px; }
+.prog-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--verde),#7fffd4); border-radius:1px; transition:width .25s; }
+.prog-txt  { font-size:9px; letter-spacing:2px; color:var(--dim); text-align:center; text-transform:uppercase; }
+
+/* ── PREVIEW ── */
+#prev-wrap { display:none; margin-bottom:18px; }
+#prev-video { width:100%; border-radius:6px; border:1px solid var(--borda); background:#000; max-height:210px; object-fit:cover; }
+.prev-info  { display:flex; align-items:center; justify-content:space-between; margin-top:8px; }
+.prev-dur   { font-size:10px; letter-spacing:2px; color:var(--dim); }
+.prev-dur.ok   { color:var(--verde); }
+.prev-dur.long { color:var(--verm); }
+
+#btn-enviar {
+  display:none; width:100%;
+  background:var(--fg); color:var(--bg);
+  border:none; border-radius:5px; padding:14px;
+  font-family:'Montserrat',sans-serif; font-size:11px;
+  font-weight:700; letter-spacing:4px; text-transform:uppercase;
+  cursor:pointer; transition:all .2s; margin-top:10px;
+}
+#btn-enviar:hover { background:#d8d8d8; }
+#btn-enviar.busy  { opacity:.5; pointer-events:none; }
+
+/* ── HISTÓRICO ── */
+.hist-hdr { font-size:8px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:10px; }
+.hist-hdr::after { content:''; flex:1; height:1px; background:var(--borda); }
+#historico { display:flex; flex-direction:column; gap:8px; }
+.hitem { background:var(--card); border:1px solid var(--borda); border-radius:5px; padding:10px 14px; display:flex; align-items:center; gap:12px; }
+.hitem-icon { font-size:20px; }
+.hitem-info { flex:1; }
+.hitem-nome { font-size:11px; letter-spacing:1px; }
+.hitem-dur  { font-size:9px; color:var(--dim); letter-spacing:1px; margin-top:2px; }
+.hitem-st   { font-size:8px; letter-spacing:2px; text-transform:uppercase; }
+.hitem-st.ok   { color:var(--verde); }
+.hitem-st.erro { color:var(--verm); }
+
+/* ── ERRO SESSÃO ── */
+#tela-erro { display:none; text-align:center; padding:80px 24px; }
+.err-icon  { font-size:44px; margin-bottom:14px; }
+.err-txt   { font-size:13px; color:var(--dim); line-height:1.8; letter-spacing:.5px; }
+</style>
+</head>
+<body>
+
+<div id="tela-erro">
+  <div class="err-icon">⚠️</div>
+  <div class="err-txt">Link inválido ou sessão expirada.<br>Escaneie o QR Code novamente.</div>
+</div>
+
+<div class="wrap" id="tela-ok">
+  <div class="hdr">
+    <div class="logo">Momento<span>∞</span></div>
+    <div class="sub">Cinema ao vivo</div>
+    <div class="badge-sessao">
+      <div class="badge-label">Sessão</div>
+      <div class="badge-val" id="sid-display">—</div>
+    </div>
+  </div>
+
+  <div class="pill amarelo" id="pill">● Conectando...</div>
+  <p id="status">Grave ou escolha um vídeo de até 30 segundos</p>
+
+  <div id="prog-wrap">
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="prog-txt" id="prog-txt">Aguarde...</div>
+  </div>
+
+  <div class="aviso-limite">⏱️ <strong>Limite: 30 segundos</strong><br>Vídeos mais longos são cortados automaticamente</div>
+
+  <div class="btns">
+    <button class="btn-acao" id="btnGravar" onclick="gravarAgora()">
+      <div class="shine"></div>
+      <div class="btn-icon">🎥</div>
+      <div class="btn-label">Gravar</div>
+      <div class="btn-sub">Câmera ao vivo</div>
+    </button>
+    <button class="btn-acao" id="btnGaleria" onclick="escolherGaleria()">
+      <div class="shine"></div>
+      <div class="btn-icon">🎞️</div>
+      <div class="btn-label">Galeria</div>
+      <div class="btn-sub">Escolher vídeo</div>
+    </button>
+  </div>
+
+  <div id="prev-wrap">
+    <video id="prev-video" controls playsinline></video>
+    <div class="prev-info">
+      <div class="prev-dur" id="prev-dur">—</div>
+    </div>
+    <button id="btn-enviar" onclick="enviarVideo()">▶ Enviar para a TV</button>
+  </div>
+
+  <div class="hist-hdr">Vídeos enviados</div>
+  <div id="historico"></div>
+</div>
+
+<!-- inputs invisíveis -->
+<input type="file" accept="video/*" capture="camcorder" id="inp-gravar"  style="display:none">
+<input type="file" accept="video/*"                     id="inp-galeria" style="display:none">
+
+<script>
+const LIMITE_S = 30;
+const params   = new URLSearchParams(location.search);
+const SID      = (params.get('sessao')||'').toUpperCase();
+
+let ws       = null;
+let recon    = null;
+let arquivo  = null;
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!SID) { mostrarErro(); return; }
+
+  try {
+    const r = await fetch(`/api/sessao/${SID}`);
+    const d = await r.json();
+    if (!d.success) throw new Error();
+  } catch { mostrarErro(); return; }
+
+  document.getElementById('sid-display').textContent = SID;
+  document.getElementById('inp-gravar').addEventListener('change',  e => selecionou(e));
+  document.getElementById('inp-galeria').addEventListener('change', e => selecionou(e));
+  ligarWS();
+});
+
+function mostrarErro() {
+  document.getElementById('tela-ok').style.display   = 'none';
+  document.getElementById('tela-erro').style.display = 'block';
+}
+
+// ── WEBSOCKET ─────────────────────────────────────────────────────────────────
+function ligarWS() {
+  if (recon) clearTimeout(recon);
+  if (ws)    ws.close();
+  const url = (location.protocol==='https:'?'wss://':'ws://') + location.host;
+  ws = new WebSocket(url);
+  setPill('amarelo','● Conectando...');
+
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo:'celular_conectado', sessaoId:SID }));
+  };
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.tipo === 'ok')              setPill('verde','● Conectado');
+    if (msg.tipo === 'video_ok')        aoConfirmar(msg.videoId);
+    if (msg.tipo === 'sessao_encerrada'){ setPill('vermelho','● Encerrada'); setStatus('Sessão encerrada.','erro'); }
+    if (msg.tipo === 'erro')            mostrarErro();
+  };
+
+  ws.onclose = () => {
+    setPill('vermelho','● Reconectando...');
+    recon = setTimeout(ligarWS, 3000);
+  };
+}
+
+// ── SELEÇÃO ───────────────────────────────────────────────────────────────────
+function gravarAgora()    { document.getElementById('inp-gravar').value='';  document.getElementById('inp-gravar').click(); }
+function escolherGaleria(){ document.getElementById('inp-galeria').value=''; document.getElementById('inp-galeria').click(); }
+
+function selecionou(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  arquivo = f;
+
+  const url  = URL.createObjectURL(f);
+  const prev = document.getElementById('prev-video');
+  prev.src   = url;
+
+  prev.onloadedmetadata = () => {
+    const dur    = prev.duration;
+    const durEl  = document.getElementById('prev-dur');
+    const btnEnv = document.getElementById('btn-enviar');
+
+    if (dur <= LIMITE_S) {
+      durEl.textContent = `⏱ ${dur.toFixed(1)}s — dentro do limite ✓`;
+      durEl.className   = 'prev-dur ok';
+      setStatus('Pronto! Toque em enviar.','ok');
+    } else {
+      durEl.textContent = `⚠️ ${dur.toFixed(1)}s — será cortado em ${LIMITE_S}s`;
+      durEl.className   = 'prev-dur long';
+      setStatus(`Vídeo longo — cortado em ${LIMITE_S}s`,'enviando');
+    }
+
+    document.getElementById('prev-wrap').style.display = 'block';
+    btnEnv.style.display = 'block';
+  };
+}
+
+// ── ENVIO ─────────────────────────────────────────────────────────────────────
+async function enviarVideo() {
+  if (!arquivo || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  const btn = document.getElementById('btn-enviar');
+  btn.classList.add('busy');
+  btn.textContent = '⏳ Processando...';
+  setStatus('Processando vídeo...','enviando');
+  document.getElementById('prog-wrap').style.display = 'block';
+  setProgresso(10,'Lendo arquivo...');
+
+  try {
+    const blob   = await cortarVideo(arquivo, LIMITE_S);
+    setProgresso(40,'Convertendo...');
+    const data64 = await toBase64(blob);
+    setProgresso(70,'Enviando para a TV...');
+
+    const videoId = 'vid_' + Date.now();
+    ws.send(JSON.stringify({ tipo:'video', videoId, dataUrl:data64 }));
+    setProgresso(90,'Quase lá...');
+
+    adicionarHistorico(videoId, arquivo.name, document.getElementById('prev-video').duration);
+
+    // 🔥 FIREBASE — descomente para gravar no Storage
+    // const ref    = storage.ref(`Eventos/${SID}/${videoId}.webm`);
+    // await ref.put(blob, { contentType:'video/webm' });
+    // const url    = await ref.getDownloadURL();
+    // await db.ref(`Eventos/${SID}/videos/${videoId}`).set(url);
+
+  } catch(err) {
+    console.error(err);
+    setStatus('Erro ao enviar. Tente novamente.','erro');
+    btn.classList.remove('busy');
+    btn.textContent = '▶ Enviar para a TV';
+    document.getElementById('prog-wrap').style.display = 'none';
+  }
+}
+
+function aoConfirmar(videoId) {
+  setProgresso(100,'Aparecendo na TV! 🎬');
+  setStatus('🎬 Vídeo ao vivo na TV!','ok');
+
+  const item = document.getElementById('h-' + videoId);
+  if (item) { const st = item.querySelector('.hitem-st'); if(st){ st.textContent='✔ na TV'; st.className='hitem-st ok'; } }
+
+  setTimeout(() => {
+    document.getElementById('prog-wrap').style.display = 'none';
+    document.getElementById('prev-wrap').style.display = 'none';
+    const btn = document.getElementById('btn-enviar');
+    btn.classList.remove('busy'); btn.textContent='▶ Enviar para a TV'; btn.style.display='none';
+    setStatus('Grave ou escolha outro vídeo de até 30s','');
+    arquivo = null;
+  }, 3200);
+}
+
+// ── CORTAR VÍDEO ─────────────────────────────────────────────────────────────
+function cortarVideo(file, maxS) {
+  return new Promise(resolve => {
+    const v = document.createElement('video');
+    v.src   = URL.createObjectURL(file); v.muted=true; v.preload='auto';
+    v.onloadedmetadata = () => {
+      if (v.duration <= maxS) { resolve(file); return; }
+      const stream = v.captureStream ? v.captureStream() : v.mozCaptureStream();
+      const rec    = new MediaRecorder(stream, { mimeType:'video/webm' });
+      const chunks = [];
+      rec.ondataavailable = e => { if(e.data.size>0) chunks.push(e.data); };
+      rec.onstop = () => resolve(new Blob(chunks, { type:'video/webm' }));
+      v.play(); rec.start();
+      setTimeout(() => { rec.stop(); v.pause(); }, maxS * 1000);
+    };
+  });
+}
+
+function toBase64(blob) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload  = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(blob);
+  });
+}
+
+// ── HISTÓRICO ─────────────────────────────────────────────────────────────────
+function adicionarHistorico(id, nome, dur) {
+  const div = document.createElement('div');
+  div.className = 'hitem'; div.id = 'h-' + id;
+  div.innerHTML = `
+    <div class="hitem-icon">🎬</div>
+    <div class="hitem-info">
+      <div class="hitem-nome">${nome.slice(0,28)}</div>
+      <div class="hitem-dur">${dur ? dur.toFixed(1)+'s' : '—'}</div>
+    </div>
+    <div class="hitem-st">⬆ enviando</div>
+  `;
+  document.getElementById('historico').prepend(div);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function setPill(cor, txt) {
+  const p = document.getElementById('pill');
+  p.className = `pill ${cor}`; p.textContent = txt;
+}
+function setStatus(msg, tipo) {
+  const s = document.getElementById('status');
+  s.textContent = msg; s.className = tipo||'';
+}
+function setProgresso(pct, txt) {
+  document.getElementById('prog-fill').style.width = pct+'%';
+  document.getElementById('prog-txt').textContent  = txt;
+}
+</script>
+</body>
+</html>

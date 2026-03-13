@@ -22,28 +22,28 @@ const isDev      = process.env.NODE_ENV !== 'production';
 
 // ─── APP ─────────────────────────────────────────────────────────────────────
 const app    = express();
-const server = createServer(app); // HTTP server compartilhado com WS
+const server = createServer(app);
 
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '150mb' }));           // ← suporta vídeos base64
+app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
 // ─── CSP ─────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
   const csp = isDev
-    ? "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; font-src * data:;"
+    ? "default-src * 'unsafe-inline' 'unsafe-eval'; img-src * data: blob:; media-src * blob: data:; font-src * data:;"
     : [
         "default-src 'self';",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net;",
         "font-src 'self' https://fonts.gstatic.com data:;",
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;",
         "img-src 'self' data: blob:;",
-        "connect-src 'self' ws: wss:;",
         "media-src 'self' blob: data:;",
+        "connect-src 'self' ws: wss:;",
       ].join(' ');
 
   res.setHeader('Content-Security-Policy', csp);
-  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
   next();
 });
 
@@ -51,11 +51,10 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── MEMÓRIA DE SESSÕES ───────────────────────────────────────────────────────
-// Map<sessaoId, { nomeEvento, criadaEm, tvSocket, celulares: Set }>
 const sessoes = new Map();
 
 // ─── WEBSOCKET SERVER ─────────────────────────────────────────────────────────
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, maxPayload: 150 * 1024 * 1024 }); // 150MB
 
 wss.on('connection', (ws) => {
 
@@ -93,7 +92,7 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    // ── CELULAR envia foto → servidor repassa para TV ─────────────────────────
+    // ── CELULAR envia FOTO → servidor repassa para TV ─────────────────────────
     if (msg.tipo === 'foto') {
       const sessao = sessoes.get(ws.sessaoId);
       if (!sessao) return;
@@ -102,14 +101,13 @@ wss.on('connection', (ws) => {
       if (tv && tv.readyState === tv.OPEN) {
         tv.send(JSON.stringify({
           tipo:      'foto',
-          dataUrl:   msg.dataUrl,   // base64 webp — viaja só na memória
+          dataUrl:   msg.dataUrl,
           fotoId:    msg.fotoId,
           timestamp: Date.now(),
         }));
         console.log(`📸 Foto ${msg.fotoId} → TV (sessão ${ws.sessaoId})`);
       }
 
-      // confirma pro celular que chegou
       ws.send(JSON.stringify({ tipo: 'foto_ok', fotoId: msg.fotoId }));
 
       // 🔥 FIREBASE — descomente para gravar a foto no Storage
@@ -119,6 +117,35 @@ wss.on('connection', (ws) => {
       // await ref.save(buffer, { contentType: 'image/webp' });
       // const [url]    = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
       // await db.ref(`Eventos/${ws.sessaoId}/fotos/${msg.fotoId}`).set(url);
+
+      return;
+    }
+
+    // ── CELULAR envia VÍDEO → servidor repassa para TV ────────────────────────
+    if (msg.tipo === 'video') {
+      const sessao = sessoes.get(ws.sessaoId);
+      if (!sessao) return;
+
+      const tv = sessao.tvSocket;
+      if (tv && tv.readyState === tv.OPEN) {
+        tv.send(JSON.stringify({
+          tipo:      'video',
+          dataUrl:   msg.dataUrl,
+          videoId:   msg.videoId,
+          timestamp: Date.now(),
+        }));
+        console.log(`🎬 Vídeo ${msg.videoId} → TV (sessão ${ws.sessaoId})`);
+      }
+
+      ws.send(JSON.stringify({ tipo: 'video_ok', videoId: msg.videoId }));
+
+      // 🔥 FIREBASE — descomente para gravar o vídeo no Storage
+      // const filePath = `Eventos/${ws.sessaoId}/${msg.videoId}.webm`;
+      // const ref      = storage.bucket().file(filePath);
+      // const buffer   = Buffer.from(msg.dataUrl.split(',')[1], 'base64');
+      // await ref.save(buffer, { contentType: 'video/webm' });
+      // const [url]    = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
+      // await db.ref(`Eventos/${ws.sessaoId}/videos/${msg.videoId}`).set(url);
 
       return;
     }
@@ -140,7 +167,7 @@ app.post('/api/sessao/nova', async (req, res) => {
   try {
     const nomeEvento = (req.body.nomeEvento || 'Evento').trim().slice(0, 80);
     const sessaoId   = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const criadaEm  = new Date().toISOString();
+    const criadaEm   = new Date().toISOString();
 
     sessoes.set(sessaoId, {
       nomeEvento,
@@ -153,15 +180,25 @@ app.post('/api/sessao/nova', async (req, res) => {
     // 🔥 FIREBASE — descomente para persistir sessão no DB
     // await db.ref(`Eventos/${sessaoId}/meta`).set({ nomeEvento, criadaEm, ativa: true });
 
-    const baseUrl   = process.env.BASE_URL || `https://${req.headers.host}`;
-    const urlCamera = `${baseUrl}/camera_evento.html?sessao=${sessaoId}&evento=${encodeURIComponent(nomeEvento)}`;
-    const urlTv     = `${baseUrl}/tv.html?sessao=${sessaoId}`;
+    const baseUrl       = process.env.BASE_URL || `https://${req.headers.host}`;
+    const urlCamera     = `${baseUrl}/camera_evento.html?sessao=${sessaoId}&evento=${encodeURIComponent(nomeEvento)}`;
+    const urlTv         = `${baseUrl}/tv.html?sessao=${sessaoId}`;
+    const urlCameraVideo= `${baseUrl}/camera_video.html?sessao=${sessaoId}`;
+    const urlTvVideo    = `${baseUrl}/tv_video.html?sessao=${sessaoId}`;
 
     console.log(`🎉 [SESSÃO CRIADA] ${sessaoId} — "${nomeEvento}"`);
-    res.json({ success: true, sessaoId, nomeEvento, criadaEm, urls: { camera: urlCamera, tv: urlTv } });
+    res.json({
+      success: true, sessaoId, nomeEvento, criadaEm,
+      urls: {
+        camera:       urlCamera,
+        tv:           urlTv,
+        camera_video: urlCameraVideo,
+        tv_video:     urlTvVideo,
+      }
+    });
 
   } catch (err) {
-    console.error('❌ Erro ao criar sessão:', err);
+    console.error('Erro ao criar sessão:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -179,7 +216,6 @@ app.delete('/api/sessao/:id', async (req, res) => {
 
   if (sessao.tvSocket?.readyState === sessao.tvSocket?.OPEN) sessao.tvSocket.send(msgFim);
   sessao.celulares.forEach(ws => { if (ws.readyState === ws.OPEN) ws.send(msgFim); });
-
   sessoes.delete(sessaoId);
 
   // 🔥 FIREBASE — descomente para apagar do DB e Storage
@@ -191,7 +227,7 @@ app.delete('/api/sessao/:id', async (req, res) => {
   res.json({ success: true, sessaoId, mensagem: 'Sessão encerrada.' });
 });
 
-// GET /api/sessao/:id — valida sessão (TV e celular consultam ao abrir)
+// GET /api/sessao/:id
 app.get('/api/sessao/:id', (req, res) => {
   const sessaoId = req.params.id.toUpperCase();
   const sessao   = sessoes.get(sessaoId);
