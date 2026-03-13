@@ -9,131 +9,79 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 
-.vlayer {
-  position: fixed; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; opacity: 0;
-  transition: opacity 0.9s ease; background: #000;
+/* ── PLAYER ÚNICO ── */
+#player {
+  position: fixed; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  background: #000;
+  display: none;
 }
-.vlayer.ativo { opacity: 1; }
+#player.visivel { display: block; }
 
-/* ── TELA DE ESPERA (QR + botão ativar) ── */
+/* ── TELA INÍCIO ── */
 #tela-inicio {
   position: fixed; inset: 0; z-index: 50; background: #000;
   display: flex; align-items: center; justify-content: center; gap: 80px;
 }
 #tela-inicio.oculto { display: none; }
 
-/* lado esquerdo — logo e botão */
-.inicio-esq {
-  display: flex; flex-direction: column;
-  align-items: flex-start; gap: 28px;
-}
-.logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 80px; letter-spacing: 16px; color: #fff;
-  text-shadow: 0 0 80px rgba(255,255,255,0.08);
-  line-height: 1;
-}
-.logo em { color: rgba(255,255,255,0.2); font-style: normal; }
-.logo-sub {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px; letter-spacing: 8px;
-  color: rgba(255,255,255,0.25); text-transform: uppercase;
-  margin-top: -18px;
-}
+.logo { font-family:'Bebas Neue',sans-serif; font-size:80px; letter-spacing:16px; color:#fff; line-height:1; }
+.logo em { color:rgba(255,255,255,.2); font-style:normal; }
+.logo-sub { font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:8px; color:rgba(255,255,255,.25); text-transform:uppercase; margin-top:-14px; }
+
+.inicio-esq { display:flex; flex-direction:column; align-items:flex-start; gap:28px; }
+.inicio-dir { display:flex; flex-direction:column; align-items:center; gap:14px; }
+
 #btn-ativar {
-  background: #fff; color: #000; border: none;
-  border-radius: 50px; padding: 16px 44px;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 12px; font-weight: 700; letter-spacing: 5px;
-  text-transform: uppercase; cursor: pointer;
-  transition: transform .2s, background .2s;
+  background:#fff; color:#000; border:none; border-radius:50px; padding:16px 44px;
+  font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700; letter-spacing:5px;
+  text-transform:uppercase; cursor:pointer; transition:transform .2s, background .2s;
 }
-#btn-ativar:hover  { background: #e8e8e8; transform: scale(1.03); }
-#btn-ativar:active { transform: scale(0.97); }
-#btn-ativar.ativado { background: #4caf82; color: #fff; pointer-events: none; }
-.ativar-hint {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 8px; letter-spacing: 3px;
-  color: rgba(255,255,255,0.18); text-transform: uppercase;
-  margin-top: -18px;
-}
+#btn-ativar:hover  { background:#e8e8e8; transform:scale(1.03); }
+#btn-ativar:active { transform:scale(.97); }
+#btn-ativar.ok     { background:#4caf82; color:#fff; pointer-events:none; }
+.ativar-hint { font-family:'Montserrat',sans-serif; font-size:8px; letter-spacing:3px; color:rgba(255,255,255,.18); text-transform:uppercase; }
 
-/* lado direito — QR */
-.inicio-dir {
-  display: flex; flex-direction: column;
-  align-items: center; gap: 14px;
-}
-#qr-box-inicio {
-  background: #fff; padding: 12px; border-radius: 6px;
-  box-shadow: 0 0 60px rgba(255,255,255,0.08);
-}
-.qr-label {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 9px; letter-spacing: 4px;
-  color: rgba(255,255,255,0.3); text-transform: uppercase; text-align: center;
-}
-.sessao-chip {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 18px; font-weight: 700; letter-spacing: 8px;
-  color: rgba(255,255,255,0.15); text-align: center;
-}
-#qr-loading {
-  width: 128px; height: 128px;
-  display: flex; align-items: center; justify-content: center;
-}
-.qr-spinner {
-  width: 24px; height: 24px; border-radius: 50%;
-  border: 2px solid rgba(255,255,255,0.1);
-  border-top-color: rgba(255,255,255,0.4);
-  animation: spin 1s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+#qr-box-inicio { background:#fff; padding:12px; border-radius:6px; box-shadow:0 0 60px rgba(255,255,255,.06); }
+.qr-label { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:4px; color:rgba(255,255,255,.3); text-transform:uppercase; text-align:center; }
+.sessao-chip { font-family:'Montserrat',sans-serif; font-size:18px; font-weight:700; letter-spacing:8px; color:rgba(255,255,255,.15); text-align:center; }
 
-/* ── AGUARDANDO VÍDEO ── */
+/* ── AGUARDANDO ── */
 #aguardando {
-  position: fixed; inset: 0; z-index: 20; background: #000;
-  display: none; flex-direction: column;
-  align-items: center; justify-content: center; gap: 24px;
-  transition: opacity 1.2s ease;
+  position:fixed; inset:0; z-index:20; background:#000;
+  display:none; flex-direction:column; align-items:center; justify-content:center; gap:24px;
 }
-#aguardando.visivel { display: flex; }
-#aguardando.oculto  { opacity: 0; pointer-events: none; }
+#aguardando.visivel { display:flex; }
 .ag-logo { font-family:'Bebas Neue',sans-serif; font-size:64px; letter-spacing:12px; color:#fff; }
 .ag-logo em { color:rgba(255,255,255,.2); font-style:normal; }
 .ag-sub  { font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:6px; color:rgba(255,255,255,.25); text-transform:uppercase; }
 .pulse { width:7px; height:7px; border-radius:50%; background:#fff; opacity:.3; animation:pulse 2.2s ease infinite; }
 @keyframes pulse { 0%,100%{transform:scale(.6);opacity:.15;} 50%{transform:scale(1.4);opacity:.6;} }
 
-/* ── QR MINI (durante o evento, canto direito) ── */
-#qr-mini {
-  position: fixed; bottom: 60px; right: 24px; z-index: 30;
-  display: none; flex-direction: column; align-items: center; gap: 6px; opacity: 0.7;
-}
-#qr-mini.visivel { display: flex; }
-#qr-box-mini { background:#fff; padding:6px; border-radius:4px; box-shadow:0 4px 30px rgba(0,0,0,.9); }
+/* ── QR MINI ── */
+#qr-mini { position:fixed; bottom:50px; right:20px; z-index:30; display:none; flex-direction:column; align-items:center; gap:6px; opacity:.7; }
+#qr-mini.visivel { display:flex; }
+#qr-box-mini { background:#fff; padding:6px; border-radius:4px; }
 .qr-mini-txt { font-family:'Montserrat',sans-serif; font-size:7px; letter-spacing:2px; color:rgba(255,255,255,.3); text-transform:uppercase; }
 
 /* ── BADGE ── */
 #badge {
-  position: fixed; top: 24px; left: 50%;
-  transform: translateX(-50%) translateY(-70px); z-index: 30;
-  background: rgba(255,255,255,0.08); backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.15); border-radius: 40px; padding: 10px 30px;
-  font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 5px;
-  color: rgba(255,255,255,0.85); text-transform: uppercase; pointer-events: none;
-  transition: transform 0.55s cubic-bezier(0.22,1,0.36,1);
+  position:fixed; top:24px; left:50%; transform:translateX(-50%) translateY(-70px); z-index:30;
+  background:rgba(255,255,255,.08); backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.15); border-radius:40px; padding:10px 30px;
+  font-family:'Montserrat',sans-serif; font-size:10px; letter-spacing:5px;
+  color:rgba(255,255,255,.85); text-transform:uppercase; pointer-events:none;
+  transition:transform .55s cubic-bezier(.22,1,.36,1);
 }
-#badge.show { transform: translateX(-50%) translateY(0); }
+#badge.show { transform:translateX(-50%) translateY(0); }
 
-/* ── BARRA STATUS ── */
+/* ── STATUS BAR ── */
 #status-bar {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
-  background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-  padding: 7px 20px;
-  display: flex; align-items: center; justify-content: space-between;
-  font-family: 'Montserrat', sans-serif; font-size: 9px;
-  letter-spacing: 2px; text-transform: uppercase;
+  position:fixed; bottom:0; left:0; right:0; z-index:40;
+  background:rgba(0,0,0,.85); backdrop-filter:blur(8px); padding:7px 20px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase;
 }
 .sb-ws  { display:flex; align-items:center; gap:6px; color:rgba(255,255,255,.3); }
 .wsdot  { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.2); transition:all .3s; }
@@ -142,17 +90,11 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 .wsdot.vermelho { background:#e05252; }
 .sb-msg { color:rgba(255,255,255,.45); font-size:9px; text-align:center; }
 .sb-sid { color:rgba(255,255,255,.18); font-size:8px; }
-
-/* ── FLASH ── */
-#flash { position:fixed; inset:0; z-index:25; background:#fff; opacity:0; pointer-events:none; transition:opacity .07s; }
-#flash.on { opacity:.12; }
 </style>
 </head>
 <body>
 
-<div id="flash"></div>
-
-<!-- TELA INICIAL: QR já visível + botão ativar -->
+<!-- TELA INÍCIO: QR + botão ativar -->
 <div id="tela-inicio">
   <div class="inicio-esq">
     <div>
@@ -163,23 +105,23 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
     <div class="ativar-hint">Clique uma vez para ativar reprodução</div>
   </div>
   <div class="inicio-dir">
-    <div id="qr-box-inicio"><div id="qr-loading"><div class="qr-spinner"></div></div></div>
+    <div id="qr-box-inicio"></div>
     <div class="qr-label">Escaneie para enviar vídeo</div>
-    <div class="sessao-chip" id="sessao-chip">—</div>
+    <div class="sessao-chip" id="sessao-chip">carregando...</div>
   </div>
 </div>
 
-<!-- AGUARDANDO VÍDEO -->
+<!-- AGUARDANDO -->
 <div id="aguardando">
   <div class="ag-logo">Momento<em>∞</em></div>
   <div class="ag-sub">Aguardando primeiro vídeo...</div>
   <div class="pulse"></div>
 </div>
 
-<video class="vlayer" id="videoA" playsinline muted loop></video>
-<video class="vlayer" id="videoB" playsinline muted loop></video>
+<!-- PLAYER ÚNICO -->
+<video id="player" playsinline muted loop></video>
 
-<!-- QR mini durante o evento -->
+<!-- QR mini -->
 <div id="qr-mini">
   <div id="qr-box-mini"></div>
   <div class="qr-mini-txt">Envie seu vídeo</div>
@@ -189,7 +131,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
 
 <div id="status-bar">
   <div class="sb-ws"><div class="wsdot" id="wsdot"></div><span id="wstxt">iniciando</span></div>
-  <div class="sb-msg" id="sb-msg">Carregando sessão...</div>
+  <div class="sb-msg" id="sb-msg">Carregando...</div>
   <div class="sb-sid">Sessão: <span id="sid">—</span></div>
 </div>
 
@@ -200,19 +142,16 @@ const sidParam = params.get('sessao') || null;
 const WS_URL   = (location.protocol==='https:'?'wss://':'ws://')+location.host;
 
 let sessaoId  = null;
-let urlCamera = null;
 let ws        = null;
 let recon     = null;
-let camada    = 'A';
 let ativado   = false;
 let videoFila = [];
 
-const vA = document.getElementById('videoA');
-const vB = document.getElementById('videoB');
+const player = document.getElementById('player');
 
 function msg(txt) { document.getElementById('sb-msg').textContent = txt; }
 
-// ── CARREGA SESSÃO E QR IMEDIATAMENTE ao abrir a página ──────────────────────
+// ── CARREGA SESSÃO IMEDIATAMENTE ──────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   if (sidParam) await carregarSessao(sidParam);
   else          await novaSessao();
@@ -231,7 +170,6 @@ async function novaSessao() {
 }
 
 async function carregarSessao(id) {
-  msg('Carregando sessão ' + id + '...');
   const r = await fetch(`/api/sessao/${id}`);
   const d = await r.json();
   if (!d.success) { await novaSessao(); return; }
@@ -240,57 +178,49 @@ async function carregarSessao(id) {
 }
 
 function aplicar(id, camUrl) {
-  sessaoId  = id;
-  urlCamera = camUrl;
-  document.getElementById('sid').textContent       = id;
+  sessaoId = id;
+  document.getElementById('sid').textContent        = id;
   document.getElementById('sessao-chip').textContent = id;
 
-  // QR grande na tela de início
-  document.getElementById('qr-loading').style.display = 'none';
+  // QR grande
   document.getElementById('qr-box-inicio').innerHTML = '';
   new QRCode(document.getElementById('qr-box-inicio'), {
-    text: camUrl, width: 148, height: 148,
-    colorDark:'#000', colorLight:'#fff'
+    text:camUrl, width:148, height:148, colorDark:'#000', colorLight:'#fff'
   });
 
-  // QR mini para durante o evento
+  // QR mini
   document.getElementById('qr-box-mini').innerHTML = '';
   new QRCode(document.getElementById('qr-box-mini'), {
-    text: camUrl, width: 80, height: 80,
-    colorDark:'#000', colorLight:'#fff'
+    text:camUrl, width:80, height:80, colorDark:'#000', colorLight:'#fff'
   });
 
-  msg('Sessão ' + id + ' pronta — escaneie o QR e clique em Iniciar');
+  msg('QR pronto — escaneie e clique em Iniciar');
 }
 
-// ── ATIVAR (clique único — libera autoplay) ───────────────────────────────────
+// ── ATIVAR ───────────────────────────────────────────────────────────────────
 async function ativar() {
   ativado = true;
   const btn = document.getElementById('btn-ativar');
-  btn.textContent = '✓ Ativado';
-  btn.classList.add('ativado');
+  btn.textContent = '✓ Ativado'; btn.classList.add('ok');
 
-  // aquece players para liberar autoplay futuro
+  // toca silêncio para liberar autoplay
   try {
-    vA.muted=true; vB.muted=true;
-    const s='data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQ=';
-    vA.src=s; await vA.play().catch(()=>{}); vA.pause(); vA.src='';
-    vB.src=s; await vB.play().catch(()=>{}); vB.pause(); vB.src='';
-  } catch(e) { /* ok */ }
+    player.muted = true;
+    player.src   = 'data:video/mp4;base64,AAAAHGZ0eXBpc29tAAACAGlzb21pc28yYXZjMQAAAAhmcmVlAAAAG21kYXQ=';
+    await player.play().catch(()=>{});
+    player.pause(); player.src = '';
+  } catch(e) {}
 
-  // muda para tela de aguardando após 1s
   setTimeout(() => {
     document.getElementById('tela-inicio').classList.add('oculto');
     document.getElementById('aguardando').classList.add('visivel');
     document.getElementById('qr-mini').classList.add('visivel');
     msg('Ativado ✓ — aguardando vídeos');
-  }, 800);
+  }, 600);
 
-  // processa vídeo que pode ter chegado antes do clique
   if (videoFila.length > 0) {
     const url = videoFila.shift();
-    videoFila = [];
-    setTimeout(() => tocarVideo(url), 1000);
+    setTimeout(() => tocarVideo(url), 800);
   }
 }
 
@@ -308,53 +238,50 @@ function ligarWS(id) {
   };
 
   ws.onmessage = (e) => {
-    let m; try { m=JSON.parse(e.data); } catch { msg('Msg inválida'); return; }
-
+    let m; try { m=JSON.parse(e.data); } catch { return; }
     if (m.tipo === 'video') {
       if (!m.videoUrl) { msg('ERRO: videoUrl ausente'); return; }
-      msg('Vídeo recebido → ' + m.videoUrl.slice(-20));
+      msg('Vídeo chegou!');
       if (ativado) tocarVideo(m.videoUrl);
-      else { videoFila=[m.videoUrl]; msg('Vídeo recebido — clique em Iniciar Cinema para exibir'); }
+      else videoFila = [m.videoUrl];
     }
-    if (m.tipo==='sessao_encerrada') { setWS('vermelho','encerrada'); msg('Sessão encerrada'); }
+    if (m.tipo === 'sessao_encerrada') { setWS('vermelho','encerrada'); }
   };
 
   ws.onclose = () => {
     setWS('vermelho','reconectando');
-    msg('Conexão perdida — reconectando...');
     recon = setTimeout(() => ligarWS(id), 3000);
   };
 }
 
-// ── REPRODUÇÃO ────────────────────────────────────────────────────────────────
+// ── REPRODUÇÃO — PLAYER ÚNICO ─────────────────────────────────────────────────
 function tocarVideo(videoUrl) {
   msg('Carregando vídeo...');
-  document.getElementById('aguardando').classList.add('oculto');
 
-  const f=document.getElementById('flash');
-  f.classList.add('on'); setTimeout(()=>f.classList.remove('on'),100);
+  // oculta tela aguardando
+  document.getElementById('aguardando').style.display = 'none';
 
-  const b=document.getElementById('badge');
-  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
+  // badge
+  const b = document.getElementById('badge');
+  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'), 2800);
 
-  const prox = camada==='A' ? vB : vA;
-  const ant  = camada==='A' ? vA : vB;
+  // para o atual, troca src, toca
+  player.pause();
+  player.src   = videoUrl;
+  player.muted = true;
+  player.loop  = true;
+  player.load();
 
-  prox.src = videoUrl; prox.load();
-
-  prox.oncanplay = () => {
-    msg('Reproduzindo ▶');
-    prox.play().then(() => {
-      ant.classList.remove('ativo');
-      prox.classList.add('ativo');
-      camada = camada==='A' ? 'B' : 'A';
-      setTimeout(() => { ant.src=''; ant.load(); }, 1200);
-    }).catch(err => msg('ERRO play: ' + err.message));
+  player.oncanplay = () => {
+    player.classList.add('visivel');
+    player.play()
+      .then(()  => msg('Reproduzindo ▶'))
+      .catch(err => msg('ERRO play: ' + err.message));
   };
 
-  prox.onerror = () => {
-    const er=prox.error;
-    msg('ERRO vídeo cód.' + (er?er.code:'?') + ': ' + (er?er.message:'desconhecido'));
+  player.onerror = () => {
+    const er = player.error;
+    msg('ERRO vídeo ' + (er?er.code:'?') + ': ' + (er?er.message:''));
   };
 }
 
