@@ -202,21 +202,34 @@ function ligarWS(id) {
 }
 
 function tocarVideo(videoUrl) {
-  msg('Carregando vídeo...');
+  msg('Buffering — aguarde 5s...');
   document.getElementById('aguardando').style.display='none';
-  const b=document.getElementById('badge');
-  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
+
   player.pause();
   player.removeAttribute('src'); player.load();
-  setTimeout(()=>{
-    player.muted=true; player.loop=true;
-    player.src=videoUrl; player.load();
-    player.oncanplay=()=>{
+  player.muted=true; player.loop=true;
+  player.src=videoUrl; player.load();
+
+  player.oncanplay=()=>{
+    // inicia download silencioso (sem exibir)
+    player.play().catch(()=>{});
+    player.pause();
+
+    // após 5s de buffer, exibe e toca do início
+    setTimeout(()=>{
       player.classList.add('visivel');
-      player.play().then(()=>msg('Reproduzindo ▶')).catch(err=>msg('ERRO play: '+err.name+' — '+err.message));
-    };
-    player.onerror=()=>{ const er=player.error; msg('ERRO vídeo cód.'+(er?er.code:'?')); };
-  }, 200);
+      player.currentTime=0;
+      player.play()
+        .then(()=>{
+          msg('Reproduzindo ▶');
+          const b=document.getElementById('badge');
+          b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
+        })
+        .catch(err=>msg('ERRO play: '+err.name+' — '+err.message));
+    }, 5000);
+  };
+
+  player.onerror=()=>{ const er=player.error; msg('ERRO vídeo cód.'+(er?er.code:'?')); };
 }
 
 function setWS(cor,txt){ document.getElementById('wsdot').className='wsdot '+cor; document.getElementById('wstxt').textContent=txt; }
