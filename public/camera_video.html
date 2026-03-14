@@ -310,6 +310,8 @@ function gravarChunk(){
 
 async function enviarChunk(blob, num){
   try {
+    console.log(`[chunk ${num}] tamanho: ${(blob.size/1024).toFixed(1)}KB tipo: ${blob.type}`);
+
     const ext  = blob.type.includes('webm') ? 'webm' : 'mp4';
     const form = new FormData();
     form.append('video',    blob, `chunk_${num}.${ext}`);
@@ -318,15 +320,30 @@ async function enviarChunk(blob, num){
     form.append('isChunk',  'true');
 
     const r = await fetch('/api/video/upload', { method:'POST', body:form });
-    const d = await r.json();
+
+    console.log(`[chunk ${num}] HTTP status: ${r.status}`);
+
+    const texto = await r.text();
+    console.log(`[chunk ${num}] resposta raw: ${texto}`);
+
+    let d;
+    try { d = JSON.parse(texto); } catch(e) {
+      setStatus('Erro parse JSON: '+texto.slice(0,80),'erro');
+      return;
+    }
 
     if(d.success){
       enviados++;
       document.getElementById('chunk-enviados').textContent = enviados+' enviados';
       document.getElementById('st-chunks').textContent = enviados;
+      setStatus(`Chunk ${num} enviado ✓`,'ok');
+    } else {
+      setStatus(`Erro chunk ${num}: ${d.error}`,'erro');
+      console.error(`[chunk ${num}] falhou:`, d);
     }
   } catch(e) {
-    console.error('Erro chunk '+num, e);
+    console.error(`[chunk ${num}] exceção:`, e);
+    setStatus('Exceção: '+e.message,'erro');
   }
 }
 
