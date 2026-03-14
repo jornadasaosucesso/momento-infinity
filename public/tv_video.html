@@ -202,34 +202,43 @@ function ligarWS(id) {
 }
 
 function tocarVideo(videoUrl) {
-  msg('Buffering — aguarde 5s...');
-  document.getElementById('aguardando').style.display='none';
+  msg('Carregando vídeo...');
+  document.getElementById('aguardando').style.display = 'none';
 
+  // limpa player anterior
   player.pause();
-  player.removeAttribute('src'); player.load();
-  player.muted=true; player.loop=true;
-  player.src=videoUrl; player.load();
+  player.removeAttribute('src');
+  player.load();
 
-  player.oncanplay=()=>{
-    // inicia download silencioso (sem exibir)
-    player.play().catch(()=>{});
-    player.pause();
+  player.muted = true;
+  player.loop  = true;
 
-    // após 5s de buffer, exibe e toca do início
-    setTimeout(()=>{
-      player.classList.add('visivel');
-      player.currentTime=0;
-      player.play()
-        .then(()=>{
-          msg('Reproduzindo ▶');
-          const b=document.getElementById('badge');
-          b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),2800);
-        })
-        .catch(err=>msg('ERRO play: '+err.name+' — '+err.message));
-    }, 5000);
+  // registra listeners ANTES de setar src
+  player.oncanplaythrough = null;
+  player.onerror = null;
+
+  player.onerror = () => {
+    const er = player.error;
+    msg('ERRO vídeo cód.' + (er ? er.code : '?') + ' — ' + (er ? er.message : 'desconhecido'));
   };
 
-  player.onerror=()=>{ const er=player.error; msg('ERRO vídeo cód.'+(er?er.code:'?')); };
+  player.oncanplaythrough = () => {
+    player.oncanplaythrough = null; // dispara só uma vez
+    player.classList.add('visivel');
+    player.currentTime = 0;
+    player.play()
+      .then(() => {
+        msg('Reproduzindo ▶');
+        const b = document.getElementById('badge');
+        b.classList.add('show');
+        setTimeout(() => b.classList.remove('show'), 2800);
+      })
+      .catch(err => msg('ERRO play: ' + err.name + ' — ' + err.message));
+  };
+
+  player.src = videoUrl;
+  player.load();
+  msg('Buffering...');
 }
 
 function setWS(cor,txt){ document.getElementById('wsdot').className='wsdot '+cor; document.getElementById('wstxt').textContent=txt; }
