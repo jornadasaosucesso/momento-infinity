@@ -254,6 +254,15 @@ body::after {
   }
   .header-mid .evento-nome { font-size: 18px; }
   .contador-num { font-size: 24px; }
+
+  /* tela de espera vira painel de QR no celular */
+  #tela-aguardando {
+    flex-direction: column;
+    gap: 20px;
+    padding: 32px 24px;
+  }
+  #tela-aguardando .aguardando-titulo { font-size: 18px; }
+  #qr-mobile { display: flex !important; }
 }
 
 </style>
@@ -285,6 +294,11 @@ body::after {
       <div class="linha-ouro"></div>
       <div class="aguardando-titulo" style="font-size:12px;">Escaneie o QR Code ao lado →</div>
       <div class="aguardando-pulse"></div>
+      <div id="qr-mobile" style="display:none; flex-direction:column; align-items:center; gap:12px; margin-top:8px;">
+        <div style="background:#fff; padding:12px; border-radius:8px;" id="qr-mobile-box"></div>
+        <div class="sessao-id" id="qr-mobile-id" style="font-size:13px; letter-spacing:3px;">— — — —</div>
+        <p class="instrucao" style="font-size:14px;">Use outro celular para fotografar<br>e as fotos aparecem aqui! ✨</p>
+      </div>
     </div>
   </main>
 
@@ -408,6 +422,14 @@ function aplicarSessao(id, nomeEvento, urlCamera) {
   const qrDiv = document.createElement('div');
   qrBox.insertBefore(qrDiv, qrBox.querySelector('.qr-corner-bl'));
   new QRCode(qrDiv, { text: urlCamera, width: 210, height: 210, colorDark: '#0a0a0f', colorLight: '#ffffff' });
+
+  // QR mobile
+  const mobileBox = document.getElementById('qr-mobile-box');
+  if (mobileBox) {
+    mobileBox.innerHTML = '';
+    new QRCode(mobileBox, { text: urlCamera, width: 200, height: 200, colorDark: '#0a0a0f', colorLight: '#ffffff' });
+    document.getElementById('qr-mobile-id').textContent = id;
+  }
 
   construirGrade();
   document.getElementById('tela-aguardando').classList.remove('oculto');
