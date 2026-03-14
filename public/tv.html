@@ -222,6 +222,40 @@ body::after {
   opacity:0;transition:all 0.4s cubic-bezier(0.22,1,0.36,1);pointer-events:none;z-index:100;white-space:nowrap;
 }
 #notif.show { opacity:1;transform:translateX(-50%) translateY(0); }
+
+/* ── MODO TELA CHEIA (após primeira foto) ── */
+#app.foto-mode #header,
+#app.foto-mode #painel-lateral,
+#app.foto-mode #footer {
+  display: none;
+}
+#app.foto-mode {
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+}
+#app.foto-mode #area-mosaico {
+  padding: 8px;
+}
+
+/* ── RESPONSIVO CELULAR ── */
+@media (max-width: 600px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  #painel-lateral { display: none; }
+  #grade-fotos {
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: repeat(5, 1fr) !important;
+  }
+  .celula.destaque {
+    grid-column: 1 / 3 !important;
+    grid-row: 1 / 3 !important;
+  }
+  .header-mid .evento-nome { font-size: 18px; }
+  .contador-num { font-size: 24px; }
+}
+
 </style>
 </head>
 <body>
@@ -280,7 +314,7 @@ body::after {
   <footer id="footer">
     <div class="footer-info">SESSÃO: <strong id="footerSessao">—</strong></div>
     <div class="footer-info">EVENTO: <strong id="footerEvento">—</strong></div>
-    <div class="footer-info">POWERED BY <strong>MOMENTO∞</strong></div>
+    <div class="footer-info">CRIAÇÃO <strong>JORGE VIANA</strong></div>
   </footer>
 
 </div>
@@ -434,6 +468,9 @@ function construirGrade() {
 
 function adicionarFoto(dataUrl) {
   document.getElementById('tela-aguardando').classList.add('oculto');
+  if (fotos.length === 0) {
+    document.getElementById('app').classList.add('foto-mode');
+  }
   fotos.push(dataUrl);
   document.getElementById('contadorNum').textContent = fotos.length;
   dispararFlash();
