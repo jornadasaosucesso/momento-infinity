@@ -167,7 +167,9 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     const videoUrl = `${baseUrl}/tmp_videos/${newName}`;
 
-    console.log(`🎬 Vídeo ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
+    // substitui a linha do console.log do vídeo
+    const tipo = req.body.isChunk === 'true' ? '🔴 Chunk ao vivo' : '🎬 Vídeo';
+    console.log(`${tipo} ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
 
     const tv = sessao.tvSocket;
     if (tv && tv.readyState === tv.OPEN) {
