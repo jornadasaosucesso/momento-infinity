@@ -33,12 +33,17 @@ setInterval(() => {
 
 const upload = multer({
   dest: TMP_DIR,
-  limits: { fileSize: 80 * 1024 * 1024 }, // 80MB máx
+  limits: { fileSize: 80 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('video/')) cb(null, true);
-    else cb(new Error('Apenas vídeos são aceitos.'));
+    console.log('📦 mime recebido:', file.mimetype, file.originalname);
+    const ok = file.mimetype.startsWith('video/')
+             || file.mimetype === 'application/octet-stream'
+             || /\.(mp4|webm|mov|m4v)$/i.test(file.originalname);
+    if (ok) cb(null, true);
+    else cb(new Error('Formato não suportado: ' + file.mimetype));
   }
 });
+
 
 const app    = express();
 const server = createServer(app);
@@ -140,7 +145,6 @@ wss.on('connection', (ws) => {
   });
 });
 
-// ─── UPLOAD DE VÍDEO (HTTP POST) 
 app.post('/api/video/upload', upload.single('video'), (req, res) => {
   try {
     const sessaoId = (req.body.sessaoId || '').toUpperCase();
@@ -154,34 +158,29 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
 
     if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
 
-    let ext = path.extname(req.file.originalname);
-    if (!ext) ext = ".mp4";
+    let ext = path.extname(req.file.originalname).toLowerCase();
+    if (!ext || ext === '.') {
+      if (req.file.mimetype.includes('webm'))      ext = '.webm';
+      else if (req.file.mimetype.includes('mp4'))  ext = '.mp4';
+      else if (req.file.mimetype.includes('mov'))  ext = '.mov';
+      else                                         ext = '.mp4';
+    }
 
     const newName = `${sessaoId}_${videoId}${ext}`;
     const newPath = path.join(TMP_DIR, newName);
 
     fs.renameSync(req.file.path, newPath);
 
-
-    const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
-
+    const baseUrl  = process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
     const videoUrl = `${baseUrl}/tmp_videos/${newName}`;
 
-    // substitui a linha do console.log do vídeo
     const tipo = req.body.isChunk === 'true' ? '🔴 Chunk ao vivo' : '🎬 Vídeo';
-    console.log(`${tipo} ${videoId} salvo → notificando TV (sessão ${sessaoId})`);
+    console.log(`${tipo} ${videoId} (${ext}) → TV (sessão ${sessaoId})`);
 
     const tv = sessao.tvSocket;
     if (tv && tv.readyState === tv.OPEN) {
       tv.send(JSON.stringify({ tipo: 'video', videoUrl, videoId, timestamp: Date.now() }));
     }
-
-    // const buffer = fs.readFileSync(newPath);
-    // const ref    = storage.bucket().file(`Eventos/${sessaoId}/${videoId}.${ext}`);
-    // await ref.save(buffer, { contentType: req.file.mimetype });
-    // const [url]  = await ref.getSignedUrl({ action: 'read', expires: '2099-01-01' });
-    // await db.ref(`Eventos/${sessaoId}/videos/${videoId}`).set(url);
-    // fs.unlinkSync(newPath); // apaga temp se for pro firebase
 
     res.json({ success: true, videoId, videoUrl });
 
