@@ -196,13 +196,27 @@ async function toggleMic() {
 }
 
 async function iniciarMic() {
+  document.getElementById('mic-label').textContent = 'Solicitando microfone...';
+  
   try {
     stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
   } catch(e) {
-    setPill('vermelho', '● Mic negado');
-    document.getElementById('mic-label').textContent = 'Permita o microfone';
+    // mostra o erro na tela em vez de sumir
+    document.getElementById('mic-label').textContent = 'ERRO: ' + e.name + ' — ' + e.message;
+    document.getElementById('mic-label').classList.add('gravando');
+    setPill('vermelho', '● ' + e.name);
+    console.error('getUserMedia erro:', e);
     return;
   }
+
+  // verifica se stream tem tracks de áudio
+  const tracks = stream.getAudioTracks();
+  if (tracks.length === 0) {
+    document.getElementById('mic-label').textContent = 'ERRO: nenhuma faixa de áudio';
+    return;
+  }
+
+  document.getElementById('mic-label').textContent = 'Mic OK — ' + tracks[0].label;
 
   const autor = document.getElementById('inp-nome').value.trim() || 'Convidado';
   localStorage.setItem('momento_nome', autor);
