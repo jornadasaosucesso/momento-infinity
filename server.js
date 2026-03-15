@@ -134,6 +134,25 @@ wss.on('connection', (ws) => {
       // await ref.save(buffer, { contentType: 'image/webp' });
       return;
     }
+    if (msg.tipo === 'mensagem') {
+      const sessao = sessoes.get(ws.sessaoId);
+      if (!sessao) return;
+      const payload = {
+        tipo:      'mensagem',
+        texto:     (msg.texto || '').slice(0, 300),
+        autor:     (msg.autor || 'Convidado').slice(0, 40),
+        emoji:     msg.emoji || '💬',
+        timestamp: Date.now()
+      };
+      // envia pra TV
+      const tv = sessao.tvSocket;
+      if (tv && tv.readyState === tv.OPEN) tv.send(JSON.stringify(payload));
+      // confirma pro celular
+      ws.send(JSON.stringify({ tipo: 'mensagem_ok' }));
+      console.log(`💬 Mensagem de ${payload.autor} → TV (sessão ${ws.sessaoId})`);
+      return;
+    }
+
   });
 
   ws.on('close', () => {
@@ -205,10 +224,22 @@ app.post('/api/sessao/nova', async (req, res) => {
     const urlTv          = `${baseUrl}/tv.html?sessao=${sessaoId}`;
     const urlCameraVideo = `${baseUrl}/camera_video.html?sessao=${sessaoId}`;
     const urlTvVideo     = `${baseUrl}/tv_video.html?sessao=${sessaoId}`;
+    const urlChatCelular = `${baseUrl}/chat_celular.html?sessao=${sessaoId}`;
+    const urlChatTv      = `${baseUrl}/chat_tv.html?sessao=${sessaoId}`;
+
+
 
     console.log(`🎉 [SESSÃO CRIADA] ${sessaoId} — "${nomeEvento}"`);
     res.json({ success: true, sessaoId, nomeEvento, criadaEm,
-      urls: { camera: urlCamera, tv: urlTv, camera_video: urlCameraVideo, tv_video: urlTvVideo }
+      urls: { 
+        camera: urlCamera, 
+        tv: urlTv, 
+        camera_video: urlCameraVideo, 
+        tv_video: urlTvVideo,
+        chat_celular: urlChatCelular,
+        chat_tv: urlChatTv
+      }
+
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

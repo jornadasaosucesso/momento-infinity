@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Momento∞ — Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--fg:#f0f0f0;--dim:rgba(240,240,240,.35);
+  --borda:rgba(240,240,240,.1);--card:rgba(240,240,240,.05);
+  --verde:#4caf82;--amarel:#e8c040;--verm:#e05252;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--fg);}
+body{font-family:'Montserrat',sans-serif;padding-bottom:max(40px,env(safe-area-inset-bottom));}
+
+.wrap{max-width:420px;margin:0 auto;padding:0 20px 40px;}
+
+.hdr{padding:28px 0 18px;text-align:center;border-bottom:1px solid var(--borda);margin-bottom:20px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:8px;}
+.logo span{color:var(--dim);}
+.sub{font-size:9px;letter-spacing:6px;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.badge-sessao{display:inline-flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--borda);border-radius:3px;padding:5px 14px;margin-top:10px;}
+.badge-label{font-size:7px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+.badge-val{font-size:13px;letter-spacing:5px;font-weight:700;}
+
+.pill{display:flex;align-items:center;justify-content:center;gap:6px;width:fit-content;
+  margin:0 auto 20px;padding:5px 16px;border-radius:20px;border:1px solid;
+  font-size:8px;letter-spacing:3px;text-transform:uppercase;transition:all .3s;}
+.pill.verde  {color:var(--verde);border-color:rgba(76,175,130,.3);background:rgba(76,175,130,.06);}
+.pill.amarelo{color:var(--amarel);border-color:rgba(232,192,64,.3);background:rgba(232,192,64,.06);}
+.pill.vermelho{color:var(--verm);border-color:rgba(224,82,82,.3);background:rgba(224,82,82,.06);}
+
+/* Nome */
+.campo-label{font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;}
+.campo-nome{display:flex;gap:8px;margin-bottom:20px;}
+#inp-nome{flex:1;background:var(--card);border:1px solid var(--borda);border-radius:6px;
+  padding:12px 14px;color:var(--fg);font-family:'Montserrat',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s;}
+#inp-nome:focus{border-color:rgba(255,255,255,.3);}
+#inp-nome::placeholder{color:var(--dim);}
+
+/* Emojis */
+.emojis{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.emoji-btn{background:var(--card);border:1px solid var(--borda);border-radius:8px;
+  padding:8px 12px;font-size:22px;cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;}
+.emoji-btn:active{transform:scale(.9);}
+.emoji-btn.selecionado{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.1);}
+
+/* Texto */
+#inp-texto{width:100%;background:var(--card);border:1px solid var(--borda);border-radius:8px;
+  padding:14px;color:var(--fg);font-family:'Montserrat',sans-serif;font-size:15px;
+  outline:none;resize:none;min-height:100px;transition:border-color .2s;margin-bottom:12px;}
+#inp-texto:focus{border-color:rgba(255,255,255,.3);}
+#inp-texto::placeholder{color:var(--dim);}
+
+/* Contador */
+.contador{text-align:right;font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:16px;}
+.contador.quase{color:var(--amarel);}
+.contador.cheio{color:var(--verm);}
+
+/* Botão enviar */
+#btn-enviar{width:100%;background:var(--fg);color:var(--bg);border:none;border-radius:6px;
+  padding:15px;font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-bottom:20px;}
+#btn-enviar:active{transform:scale(.98);}
+#btn-enviar.busy{opacity:.4;pointer-events:none;}
+#btn-enviar.ok{background:var(--verde);color:#fff;}
+
+/* Histórico */
+.hist-hdr{font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;
+  margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.hist-hdr::after{content:'';flex:1;height:1px;background:var(--borda);}
+#historico{display:flex;flex-direction:column;gap:8px;}
+.hitem{background:var(--card);border:1px solid var(--borda);border-radius:8px;
+  padding:12px 14px;display:flex;gap:12px;align-items:flex-start;}
+.hitem-emoji{font-size:24px;line-height:1;margin-top:2px;}
+.hitem-corpo{flex:1;}
+.hitem-autor{font-size:9px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:4px;}
+.hitem-texto{font-size:13px;line-height:1.5;}
+.hitem-status{font-size:8px;letter-spacing:2px;color:var(--verde);text-transform:uppercase;margin-top:4px;}
+
+#tela-erro{display:none;text-align:center;padding:80px 24px;}
+.err-icon{font-size:44px;margin-bottom:14px;}
+.err-txt{font-size:13px;color:var(--dim);line-height:1.8;}
+</style>
+</head>
+<body>
+
+<div id="tela-erro">
+  <div class="err-icon">⚠️</div>
+  <div class="err-txt">Link inválido ou sessão expirada.<br>Escaneie o QR Code novamente.</div>
+</div>
+
+<div class="wrap" id="tela-ok">
+  <div class="hdr">
+    <div class="logo">Momento<span>∞</span></div>
+    <div class="sub">Canal de mensagens</div>
+    <div class="badge-sessao">
+      <div class="badge-label">Sessão</div>
+      <div class="badge-val" id="sid-display">—</div>
+    </div>
+  </div>
+
+  <div class="pill amarelo" id="pill">● Conectando...</div>
+
+  <div class="campo-label">Seu nome</div>
+  <div class="campo-nome">
+    <input id="inp-nome" type="text" placeholder="Como quer aparecer na TV?" maxlength="40"/>
+  </div>
+
+  <div class="campo-label">Escolha um emoji</div>
+  <div class="emojis" id="emojis">
+    <button class="emoji-btn selecionado" onclick="selecionarEmoji(this, '💬')">💬</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '❤️')">❤️</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '🎉')">🎉</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '👏')">👏</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '😂')">😂</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '🔥')">🔥</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '✨')">✨</button>
+    <button class="emoji-btn" onclick="selecionarEmoji(this, '👍')">👍</button>
+  </div>
+
+  <div class="campo-label">Sua mensagem</div>
+  <textarea id="inp-texto" placeholder="Digite sua mensagem para a TV..." maxlength="300" oninput="contarCaracteres()"></textarea>
+  <div class="contador" id="contador">0 / 300</div>
+
+  <button id="btn-enviar" onclick="enviarMensagem()">💬 Enviar para a TV</button>
+
+  <div class="hist-hdr">Enviadas</div>
+  <div id="historico"></div>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const SID    = (params.get('sessao') || '').toUpperCase();
+let ws       = null;
+let recon    = null;
+let emoji    = '💬';
+
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!SID) { mostrarErro(); return; }
+  try {
+    const r = await fetch(`/api/sessao/${SID}`);
+    const d = await r.json();
+    if (!d.success) throw new Error();
+  } catch { mostrarErro(); return; }
+
+  document.getElementById('sid-display').textContent = SID;
+
+  // recupera nome salvo
+  const nomeSalvo = localStorage.getItem('momento_nome');
+  if (nomeSalvo) document.getElementById('inp-nome').value = nomeSalvo;
+
+  ligarWS();
+});
+
+function mostrarErro() {
+  document.getElementById('tela-ok').style.display = 'none';
+  document.getElementById('tela-erro').style.display = 'block';
+}
+
+function ligarWS() {
+  if (recon) clearTimeout(recon);
+  if (ws)    ws.close();
+  const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  ws = new WebSocket(url);
+  setPill('amarelo', '● Conectando...');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo: 'celular_conectado', sessaoId: SID }));
+    setPill('verde', '● Conectado');
+  };
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.tipo === 'mensagem_ok') confirmarEnvio();
+    if (m.tipo === 'sessao_encerrada') setPill('vermelho', '● Encerrada');
+  };
+  ws.onclose = () => { setPill('vermelho', '● Reconectando...'); recon = setTimeout(ligarWS, 3000); };
+}
+
+function selecionarEmoji(btn, em) {
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selecionado'));
+  btn.classList.add('selecionado');
+  emoji = em;
+}
+
+function contarCaracteres() {
+  const len = document.getElementById('inp-texto').value.length;
+  const el  = document.getElementById('contador');
+  el.textContent = `${len} / 300`;
+  el.className   = 'contador' + (len > 280 ? ' cheio' : len > 200 ? ' quase' : '');
+}
+
+let msgPendente = null;
+
+function enviarMensagem() {
+  const texto = document.getElementById('inp-texto').value.trim();
+  const autor = document.getElementById('inp-nome').value.trim() || 'Convidado';
+  if (!texto) { document.getElementById('inp-texto').focus(); return; }
+  if (!ws || ws.readyState !== ws.OPEN) { setPill('vermelho', '● Sem conexão'); return; }
+
+  localStorage.setItem('momento_nome', autor);
+
+  msgPendente = { texto, autor, emoji, id: Date.now() };
+
+  const btn = document.getElementById('btn-enviar');
+  btn.classList.add('busy');
+  btn.textContent = '⏳ Enviando...';
+
+  ws.send(JSON.stringify({ tipo: 'mensagem', texto, autor, emoji, sessaoId: SID }));
+
+  // fallback se não vier confirmação em 3s
+  setTimeout(() => { if (msgPendente) confirmarEnvio(); }, 3000);
+}
+
+function confirmarEnvio() {
+  if (!msgPendente) return;
+  const { texto, autor, emoji: em, id } = msgPendente;
+  msgPendente = null;
+
+  adicionarHistorico(id, autor, em, texto);
+
+  document.getElementById('inp-texto').value = '';
+  contarCaracteres();
+
+  const btn = document.getElementById('btn-enviar');
+  btn.textContent = '✓ Enviado!';
+  btn.classList.remove('busy');
+  btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = '💬 Enviar para a TV'; btn.classList.remove('ok'); }, 2000);
+}
+
+function adicionarHistorico(id, autor, em, texto) {
+  const div = document.createElement('div');
+  div.className = 'hitem';
+  div.innerHTML = `
+    <div class="hitem-emoji">${em}</div>
+    <div class="hitem-corpo">
+      <div class="hitem-autor">${autor}</div>
+      <div class="hitem-texto">${texto}</div>
+      <div class="hitem-status">✔ na TV</div>
+    </div>`;
+  document.getElementById('historico').prepend(div);
+}
+
+function setPill(cor, txt) {
+  const p = document.getElementById('pill');
+  p.className = `pill ${cor}`;
+  p.textContent = txt;
+}
+</script>
+</body>
+</html>
