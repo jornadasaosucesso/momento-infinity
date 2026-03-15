@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MOMENTO∞ — VOZ AO VIVO</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+<style>
+:root {
+  --ouro: #c9a84c; --ouro2: #e8c97a;
+  --ouro-dim: rgba(201,168,76,0.18);
+  --escuro: #0a0a0f;
+  --borda: rgba(201,168,76,0.22); --borda2: rgba(201,168,76,0.08);
+  --texto: #f0ead8; --dim: rgba(240,234,216,0.4);
+  --verm: #e05252;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: var(--escuro); }
+body { font-family: 'Cormorant Garamond', serif; color: var(--texto); }
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.06) 0%, transparent 70%);
+}
+
+#app {
+  position: relative; z-index: 1; height: 100vh;
+  display: grid; grid-template-columns: 1fr 320px;
+  grid-template-rows: auto 1fr auto;
+}
+
+/* HEADER */
+#header {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 36px; border-bottom: 1px solid var(--borda);
+  background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
+}
+.logo { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: var(--ouro); letter-spacing: 5px; }
+.logo em { font-style: italic; font-weight: 400; color: var(--ouro2); font-size: 17px; }
+.linha-ouro { width: 50px; height: 1px; background: linear-gradient(90deg, transparent, var(--ouro), transparent); margin: 5px auto; }
+
+/* ÁREA PRINCIPAL */
+#area-principal {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 40px; padding: 40px; position: relative;
+}
+
+/* ONDAS GRANDES */
+.ondas-wrap {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; height: 120px;
+}
+.onda {
+  width: 8px; border-radius: 4px; background: var(--ouro);
+  transition: background .3s;
+}
+.ondas-wrap.ativa .onda { animation: ondaTV .6s ease infinite; }
+.ondas-wrap.silencio .onda {
+  height: 4px !important;
+  animation: none;
+  background: var(--borda);
+}
+.onda:nth-child(1)  { animation-delay: 0s;    }
+.onda:nth-child(2)  { animation-delay: .08s;  }
+.onda:nth-child(3)  { animation-delay: .16s;  }
+.onda:nth-child(4)  { animation-delay: .24s;  }
+.onda:nth-child(5)  { animation-delay: .32s;  }
+.onda:nth-child(6)  { animation-delay: .24s;  }
+.onda:nth-child(7)  { animation-delay: .16s;  }
+.onda:nth-child(8)  { animation-delay: .08s;  }
+.onda:nth-child(9)  { animation-delay: 0s;    }
+.onda:nth-child(10) { animation-delay: .08s;  }
+.onda:nth-child(11) { animation-delay: .16s;  }
+.onda:nth-child(12) { animation-delay: .24s;  }
+.onda:nth-child(13) { animation-delay: .32s;  }
+@keyframes ondaTV {
+  0%,100% { height: 16px; }
+  50%      { height: 100px; }
+}
+
+/* Card do locutor */
+#card-locutor {
+  text-align: center; transition: all .5s ease;
+}
+.locutor-emoji { font-size: 56px; margin-bottom: 12px; }
+.locutor-nome {
+  font-family: 'Playfair Display', serif; font-size: 36px; font-style: italic;
+  color: var(--texto); letter-spacing: 3px;
+}
+.locutor-sub {
+  font-family: 'Space Mono', monospace; font-size: 10px; color: var(--ouro2);
+  letter-spacing: 4px; text-transform: uppercase; margin-top: 8px;
+}
+
+/* Badge AO VIVO */
+#live-badge {
+  display: none; align-items: center; gap: 8px;
+  background: rgba(224,82,82,0.1); border: 1px solid rgba(224,82,82,0.4);
+  border-radius: 20px; padding: 8px 20px;
+  font-family: 'Space Mono', monospace; font-size: 10px;
+  letter-spacing: 3px; text-transform: uppercase; color: var(--verm);
+}
+#live-badge.visivel { display: flex; }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--verm); animation: pulsev 1s ease infinite; }
+@keyframes pulsev { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+
+/* Tela aguardando */
+#tela-aguardando {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; z-index: 10;
+  background: rgba(10,10,15,0.92); backdrop-filter: blur(4px); transition: opacity .8s;
+}
+#tela-aguardando.oculto { opacity: 0; pointer-events: none; }
+.ag-titulo { font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic; color: var(--dim); letter-spacing: 2px; text-align: center; }
+@keyframes pulse { 0%,100%{opacity:.3;transform:scale(.8);}50%{opacity:1;transform:scale(1.2);} }
+.ag-pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--ouro); animation: pulse 2s ease infinite; }
+
+/* PAINEL LATERAL */
+#painel-lateral {
+  border-left: 1px solid var(--borda); background: rgba(10,10,15,0.6);
+  backdrop-filter: blur(12px); display: flex; flex-direction: column;
+  align-items: center; padding: 24px 20px; gap: 18px;
+}
+.qr-titulo { font-family: 'Playfair Display', serif; font-size: 13px; font-style: italic; color: var(--ouro2); letter-spacing: 2px; text-align: center; }
+.qr-sub { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--dim); letter-spacing: 2px; text-transform: uppercase; text-align: center; margin-top: 3px; }
+#qr-box {
+  background: #fff; padding: 10px; border-radius: 5px;
+  box-shadow: 0 0 0 1px var(--borda); position: relative;
+}
+#qr-box::before, #qr-box::after, .qr-corner-bl, .qr-corner-br {
+  content: ''; position: absolute; width: 13px; height: 13px; border-color: var(--ouro); border-style: solid;
+}
+#qr-box::before { top:-1px; left:-1px;   border-width: 2px 0 0 2px; }
+#qr-box::after  { top:-1px; right:-1px;  border-width: 2px 2px 0 0; }
+.qr-corner-bl   { bottom:-1px; left:-1px;  border-width: 0 0 2px 2px; }
+.qr-corner-br   { bottom:-1px; right:-1px; border-width: 0 2px 2px 0; }
+.sessao-id {
+  font-family: 'Space Mono', monospace; font-size: 11px; color: var(--ouro);
+  letter-spacing: 4px; text-align: center; background: var(--ouro-dim);
+  border: 1px solid var(--borda); border-radius: 4px; padding: 7px 14px; width: 100%;
+}
+.instrucao { text-align: center; font-size: 13px; color: var(--dim); line-height: 1.7; font-style: italic; }
+.instrucao strong { color: var(--ouro2); font-style: normal; font-weight: 600; }
+.divider-ouro { width: 100%; display: flex; align-items: center; gap: 10px; }
+.divider-ouro::before { content:''; flex:1; height:1px; background: linear-gradient(90deg, transparent, var(--borda)); }
+.divider-ouro::after  { content:''; flex:1; height:1px; background: linear-gradient(270deg, transparent, var(--borda)); }
+.divider-ouro span { color: var(--ouro); font-size: 11px; flex-shrink: 0; }
+.ws-status {
+  font-family: 'Space Mono', monospace; font-size: 8px; letter-spacing: 2px;
+  text-transform: uppercase; text-align: center; padding: 5px 10px;
+  border-radius: 3px; border: 1px solid; width: 100%; transition: all .3s;
+}
+.ws-status.conectado  { color: #4caf82; border-color: rgba(76,175,130,.3); background: rgba(76,175,130,.08); }
+.ws-status.aguardando { color: var(--dim); border-color: var(--borda2); }
+.ws-status.erro       { color: #e05252; border-color: rgba(224,82,82,.3); background: rgba(224,82,82,.08); }
+
+/* FOOTER */
+#footer {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 36px; border-top: 1px solid var(--borda2); background: rgba(10,10,15,0.9);
+}
+.footer-info { font-family: 'Space Mono', monospace; font-size: 8px; color: var(--dim); letter-spacing: 2px; }
+.footer-info strong { color: var(--ouro); }
+
+/* dois players de áudio */
+audio { display: none; }
+</style>
+</head>
+<body>
+
+<audio id="playerA"></audio>
+<audio id="playerB"></audio>
+
+<div id="app">
+  <header id="header">
+    <div class="logo">Momento<em>∞</em></div>
+    <div style="text-align:center;">
+      <div style="font-family:'Playfair Display',serif;font-size:20px;font-style:italic;letter-spacing:2px;">Voz ao Vivo</div>
+      <div class="linha-ouro"></div>
+    </div>
+    <div id="live-badge"><div class="live-dot"></div>AO VIVO</div>
+  </header>
+
+  <main id="area-principal">
+    <div class="ondas-wrap silencio" id="ondas">
+      <div class="onda"></div><div class="onda"></div><div class="onda"></div>
+      <div class="onda"></div><div class="onda"></div><div class="onda"></div>
+      <div class="onda"></div><div class="onda"></div><div class="onda"></div>
+      <div class="onda"></div><div class="onda"></div><div class="onda"></div>
+      <div class="onda"></div>
+    </div>
+
+    <div id="card-locutor">
+      <div class="locutor-emoji">🎙️</div>
+      <div class="locutor-nome" id="locutor-nome">—</div>
+      <div class="locutor-sub" id="locutor-sub">aguardando voz...</div>
+    </div>
+
+    <div id="tela-aguardando">
+      <div class="ag-titulo">Aguardando transmissão de voz...</div>
+      <div class="linha-ouro"></div>
+      <div class="ag-titulo" style="font-size:12px;">Escaneie o QR Code ao lado →</div>
+      <div class="ag-pulse"></div>
+    </div>
+  </main>
+
+  <aside id="painel-lateral">
+    <div>
+      <div class="qr-titulo">Fale ao Vivo</div>
+      <div class="qr-sub">Aponte a câmera para participar</div>
+    </div>
+    <div style="position:relative;">
+      <div id="qr-box">
+        <div class="qr-corner-bl"></div>
+        <div class="qr-corner-br"></div>
+      </div>
+    </div>
+    <div class="sessao-id" id="sessaoIdDisplay">— — — —</div>
+    <div class="ws-status aguardando" id="wsStatus">● Conectando...</div>
+    <div class="divider-ouro"><span>✦</span></div>
+    <p class="instrucao">
+      Use qualquer celular.<br>
+      <strong>Sem app necessário.</strong><br>
+      Sua voz chega aqui<br>em ~5 segundos. 🎙️
+    </p>
+  </aside>
+
+  <footer id="footer">
+    <div class="footer-info">SESSÃO: <strong id="footerSessao">—</strong></div>
+    <div class="footer-info">VOZ <strong>AO VIVO</strong></div>
+    <div class="footer-info">CRIAÇÃO <strong>JORGE VIANA</strong></div>
+  </footer>
+</div>
+
+<script>
+const params        = new URLSearchParams(location.search);
+const sessaoIdParam = params.get('sessao') || null;
+const WS_URL        = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+
+let sessaoId  = null;
+let ws        = null;
+let wsReconect= null;
+let ativado   = false;
+let fila      = [];
+let tocando   = false;
+let ativo     = 'A';
+let autorAtual= '—';
+let silencioTimer = null;
+
+const pA = document.getElementById('playerA');
+const pB = document.getElementById('playerB');
+
+function playerAtivo()  { return ativo === 'A' ? pA : pB; }
+function playerEspera() { return ativo === 'A' ? pB : pA; }
+function trocarAtivo()  { ativo = ativo === 'A' ? 'B' : 'A'; }
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // desbloqueia autoplay com interação do usuário
+  document.body.addEventListener('click', desbloquearAudio, { once: true });
+  if (sessaoIdParam) await carregarSessao(sessaoIdParam);
+  else               await novaSessao();
+});
+
+function desbloquearAudio() {
+  for (const p of [pA, pB]) {
+    p.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    p.play().catch(() => {});
+    p.pause(); p.removeAttribute('src');
+  }
+  ativado = true;
+  if (fila.length > 0) proximoChunk();
+}
+
+async function novaSessao() {
+  const res  = await fetch('/api/sessao/nova', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nomeEvento: 'Voz ao Vivo' })
+  });
+  const data = await res.json();
+  if (!data.success) return;
+  sessaoId = data.sessaoId;
+  aplicarSessao(data.sessaoId, data.urls.voz_celular);
+  conectarWS();
+}
+
+async function carregarSessao(id) {
+  try {
+    const res  = await fetch(`/api/sessao/${id}`);
+    const data = await res.json();
+    if (!data.success) throw new Error();
+    sessaoId = id;
+    const urlVoz = `${location.origin}/voz_celular.html?sessao=${id}`;
+    aplicarSessao(id, urlVoz);
+    conectarWS();
+  } catch { await novaSessao(); }
+}
+
+function aplicarSessao(id, urlVoz) {
+  document.getElementById('sessaoIdDisplay').textContent = id;
+  document.getElementById('footerSessao').textContent    = id;
+
+  const qrBox = document.getElementById('qr-box');
+  [...qrBox.children].forEach(c => {
+    if (!c.classList.contains('qr-corner-bl') && !c.classList.contains('qr-corner-br')) c.remove();
+  });
+  const qrDiv = document.createElement('div');
+  qrBox.insertBefore(qrDiv, qrBox.querySelector('.qr-corner-bl'));
+  new QRCode(qrDiv, { text: urlVoz, width: 210, height: 210, colorDark: '#0a0a0f', colorLight: '#ffffff' });
+}
+
+function conectarWS() {
+  if (wsReconect) clearTimeout(wsReconect);
+  if (ws) ws.close();
+  ws = new WebSocket(WS_URL);
+  setWsStatus('aguardando', '● Conectando...');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo: 'tv_conectada', sessaoId }));
+    setWsStatus('conectado', '● TV conectada');
+  };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    if (msg.tipo === 'audio') {
+      fila.push({ url: msg.audioUrl, autor: msg.autor });
+      if (ativado && !tocando) proximoChunk();
+    }
+    if (msg.tipo === 'sessao_encerrada') {
+      setWsStatus('aguardando', '● Encerrada');
+      entrarSilencio();
+    }
+  };
+  ws.onclose = () => {
+    setWsStatus('erro', '● Reconectando...');
+    wsReconect = setTimeout(conectarWS, 3000);
+  };
+  ws.onerror = () => setWsStatus('erro', '● Erro');
+}
+
+function proximoChunk() {
+  if (fila.length === 0) { tocando = false; return; }
+  tocando = true;
+
+  const { url, autor } = fila.shift();
+  const espera = playerEspera();
+
+  espera.oncanplaythrough = null;
+  espera.onerror = null;
+
+  espera.onerror = () => { tocando = false; proximoChunk(); };
+
+  espera.oncanplaythrough = () => {
+    espera.oncanplaythrough = null;
+    espera.play().then(() => {
+      trocarAtivo();
+      playerEspera().pause();
+      playerEspera().removeAttribute('src');
+
+      // atualiza UI
+      document.getElementById('tela-aguardando').classList.add('oculto');
+      document.getElementById('live-badge').classList.add('visivel');
+      document.getElementById('ondas').classList.remove('silencio');
+      document.getElementById('ondas').classList.add('ativa');
+      document.getElementById('locutor-nome').textContent = autor;
+      document.getElementById('locutor-sub').textContent  = 'falando ao vivo';
+      autorAtual = autor;
+
+      // reinicia timer de silêncio
+      if (silencioTimer) clearTimeout(silencioTimer);
+      silencioTimer = setTimeout(entrarSilencio, 8000);
+
+    }).catch(() => { tocando = false; proximoChunk(); });
+  };
+
+  espera.onended = () => { tocando = false; proximoChunk(); };
+
+  espera.src = url;
+  espera.load();
+}
+
+function entrarSilencio() {
+  document.getElementById('ondas').classList.remove('ativa');
+  document.getElementById('ondas').classList.add('silencio');
+  document.getElementById('live-badge').classList.remove('visivel');
+  document.getElementById('locutor-sub').textContent = 'aguardando voz...';
+}
+
+function setWsStatus(tipo, texto) {
+  const el = document.getElementById('wsStatus');
+  el.className = `ws-status ${tipo}`;
+  el.textContent = texto;
+}
+</script>
+</body>
+</html>

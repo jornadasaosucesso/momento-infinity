@@ -37,8 +37,9 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     console.log('📦 mime recebido:', file.mimetype, file.originalname);
     const ok = file.mimetype.startsWith('video/')
+             || file.mimetype.startsWith('audio/')
              || file.mimetype === 'application/octet-stream'
-             || /\.(mp4|webm|mov|m4v)$/i.test(file.originalname);
+             || /\.(mp4|webm|mov|m4v|mp3|ogg|wav|m4a)$/i.test(file.originalname);
     if (ok) cb(null, true);
     else cb(new Error('Formato não suportado: ' + file.mimetype));
   }
@@ -209,6 +210,49 @@ app.post('/api/video/upload', upload.single('video'), (req, res) => {
   }
 });
 
+app.post('/api/audio/upload', upload.single('audio'), (req, res) => {
+  try {
+    const sessaoId = (req.body.sessaoId || '').toUpperCase();
+    const audioId  = req.body.audioId || ('aud_' + Date.now());
+    const autor    = (req.body.autor || 'Convidado').slice(0, 40);
+    const sessao   = sessoes.get(sessaoId);
+
+    if (!sessao) {
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(404).json({ success: false, error: 'Sessão não encontrada.' });
+    }
+    if (!req.file) return res.status(400).json({ success: false, error: 'Nenhum arquivo recebido.' });
+
+    let ext = path.extname(req.file.originalname).toLowerCase();
+    if (!ext || ext === '.') {
+      if (req.file.mimetype.includes('webm')) ext = '.webm';
+      else if (req.file.mimetype.includes('ogg')) ext = '.ogg';
+      else if (req.file.mimetype.includes('mp4')) ext = '.m4a';
+      else ext = '.webm';
+    }
+
+    const newName = `${sessaoId}_${audioId}${ext}`;
+    const newPath = path.join(TMP_DIR, newName);
+    fs.renameSync(req.file.path, newPath);
+
+    const baseUrl  = process.env.BASE_URL || `${req.protocol}://${req.headers.host}`;
+    const audioUrl = `${baseUrl}/tmp_videos/${newName}`;
+
+    console.log(`🎙️ Chunk de voz de ${autor} → TV (sessão ${sessaoId})`);
+
+    const tv = sessao.tvSocket;
+    if (tv && tv.readyState === tv.OPEN) {
+      tv.send(JSON.stringify({ tipo: 'audio', audioUrl, audioId, autor, timestamp: Date.now() }));
+    }
+
+    res.json({ success: true, audioId, audioUrl });
+
+  } catch (err) {
+    console.error('Erro no upload de áudio:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 app.post('/api/sessao/nova', async (req, res) => {
   try {
     const nomeEvento = (req.body.nomeEvento || 'Evento').trim().slice(0, 80);
@@ -225,20 +269,22 @@ app.post('/api/sessao/nova', async (req, res) => {
     const urlCameraVideo = `${baseUrl}/camera_video.html?sessao=${sessaoId}`;
     const urlTvVideo     = `${baseUrl}/tv_video.html?sessao=${sessaoId}`;
     const urlChatCelular = `${baseUrl}/chat_celular.html?sessao=${sessaoId}`;
-    const urlChatTv      = `${baseUrl}/chat_tv.html?sessao=${sessaoId}`;
-
-
+    const urlChatTv      = `${baseUrl}/tv_chat.html?sessao=${sessaoId}`;
+    const urlVozCelular = `${baseUrl}/voz_celular.html?sessao=${sessaoId}`;
+    const urlVozTv      = `${baseUrl}/voz_tv.html?sessao=${sessaoId}`;
 
     console.log(`🎉 [SESSÃO CRIADA] ${sessaoId} — "${nomeEvento}"`);
     res.json({ success: true, sessaoId, nomeEvento, criadaEm,
-      urls: { 
-        camera: urlCamera, 
-        tv: urlTv, 
-        camera_video: urlCameraVideo, 
-        tv_video: urlTvVideo,
-        chat_celular: urlChatCelular,
-        chat_tv: urlChatTv
-      }
+    urls: {
+      camera: urlCamera,
+      tv: urlTv,
+      camera_video: urlCameraVideo,
+      tv_video: urlTvVideo,
+      chat_celular: urlChatCelular,
+      chat_tv: urlChatTv,
+      voz_celular: urlVozCelular,
+      voz_tv: urlVozTv
+    }
 
     });
   } catch (err) {

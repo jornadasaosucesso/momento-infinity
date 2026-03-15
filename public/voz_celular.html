@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Momento∞ — Canal de Voz</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--fg:#f0f0f0;--dim:rgba(240,240,240,.35);
+  --borda:rgba(240,240,240,.1);--card:rgba(240,240,240,.05);
+  --verde:#4caf82;--amarel:#e8c040;--verm:#e05252;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg);color:var(--fg);}
+body{font-family:'Montserrat',sans-serif;padding-bottom:max(40px,env(safe-area-inset-bottom));}
+
+.wrap{max-width:420px;margin:0 auto;padding:0 20px 40px;}
+
+.hdr{padding:28px 0 18px;text-align:center;border-bottom:1px solid var(--borda);margin-bottom:24px;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:8px;}
+.logo span{color:var(--dim);}
+.sub{font-size:9px;letter-spacing:6px;color:var(--dim);text-transform:uppercase;margin-top:4px;}
+.badge-sessao{display:inline-flex;align-items:center;gap:8px;background:var(--card);
+  border:1px solid var(--borda);border-radius:3px;padding:5px 14px;margin-top:10px;}
+.badge-label{font-size:7px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;}
+.badge-val{font-size:13px;letter-spacing:5px;font-weight:700;}
+
+.pill{display:flex;align-items:center;justify-content:center;gap:6px;width:fit-content;
+  margin:0 auto 24px;padding:5px 16px;border-radius:20px;border:1px solid;
+  font-size:8px;letter-spacing:3px;text-transform:uppercase;transition:all .3s;}
+.pill.verde  {color:var(--verde);border-color:rgba(76,175,130,.3);background:rgba(76,175,130,.06);}
+.pill.amarelo{color:var(--amarel);border-color:rgba(232,192,64,.3);background:rgba(232,192,64,.06);}
+.pill.vermelho{color:var(--verm);border-color:rgba(224,82,82,.3);background:rgba(224,82,82,.06);}
+
+/* Nome */
+.campo-label{font-size:9px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;}
+#inp-nome{width:100%;background:var(--card);border:1px solid var(--borda);border-radius:6px;
+  padding:12px 14px;color:var(--fg);font-family:'Montserrat',sans-serif;font-size:13px;
+  outline:none;transition:border-color .2s;margin-bottom:24px;}
+#inp-nome:focus{border-color:rgba(255,255,255,.3);}
+#inp-nome::placeholder{color:var(--dim);}
+
+/* Botão mic — grande e central */
+.mic-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;margin-bottom:32px;}
+#btn-mic{width:120px;height:120px;border-radius:50%;border:2px solid var(--borda);
+  background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:52px;transition:all .2s;-webkit-tap-highlight-color:transparent;position:relative;}
+#btn-mic:active{transform:scale(.95);}
+#btn-mic.gravando{border-color:var(--verm);background:rgba(224,82,82,.1);
+  box-shadow:0 0 0 0 rgba(224,82,82,.4);animation:micPulse 1.2s ease infinite;}
+@keyframes micPulse{
+  0%{box-shadow:0 0 0 0 rgba(224,82,82,.4);}
+  70%{box-shadow:0 0 0 20px rgba(224,82,82,0);}
+  100%{box-shadow:0 0 0 0 rgba(224,82,82,0);}
+}
+.mic-label{font-size:10px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;text-align:center;}
+.mic-label.gravando{color:var(--verm);}
+
+/* Ondas do celular */
+.ondas-cel{display:flex;align-items:center;justify-content:center;gap:4px;height:32px;margin-bottom:8px;}
+.onda-cel{width:4px;border-radius:2px;background:var(--verm);opacity:0;transition:opacity .3s;}
+.ondas-cel.ativa .onda-cel{opacity:1;}
+.onda-cel:nth-child(1){animation:ondaCel .8s ease infinite 0s;}
+.onda-cel:nth-child(2){animation:ondaCel .8s ease infinite .1s;}
+.onda-cel:nth-child(3){animation:ondaCel .8s ease infinite .2s;}
+.onda-cel:nth-child(4){animation:ondaCel .8s ease infinite .3s;}
+.onda-cel:nth-child(5){animation:ondaCel .8s ease infinite .15s;}
+.onda-cel:nth-child(6){animation:ondaCel .8s ease infinite .05s;}
+.onda-cel:nth-child(7){animation:ondaCel .8s ease infinite .25s;}
+@keyframes ondaCel{
+  0%,100%{height:6px;}
+  50%{height:28px;}
+}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px;}
+.stat{background:var(--card);border:1px solid var(--borda);border-radius:6px;padding:10px;text-align:center;}
+.stat-val{font-size:18px;font-weight:700;letter-spacing:2px;}
+.stat-lbl{font-size:7px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-top:3px;}
+
+/* Instrução */
+.instrucao{text-align:center;font-size:12px;color:var(--dim);line-height:1.8;
+  background:var(--card);border:1px solid var(--borda);border-radius:8px;padding:16px;}
+
+#tela-erro{display:none;text-align:center;padding:80px 24px;}
+.err-icon{font-size:44px;margin-bottom:14px;}
+.err-txt{font-size:13px;color:var(--dim);line-height:1.8;}
+</style>
+</head>
+<body>
+
+<div id="tela-erro">
+  <div class="err-icon">⚠️</div>
+  <div class="err-txt">Link inválido ou sessão expirada.<br>Escaneie o QR Code novamente.</div>
+</div>
+
+<div class="wrap" id="tela-ok">
+  <div class="hdr">
+    <div class="logo">Momento<span>∞</span></div>
+    <div class="sub">Canal de Voz</div>
+    <div class="badge-sessao">
+      <div class="badge-label">Sessão</div>
+      <div class="badge-val" id="sid-display">—</div>
+    </div>
+  </div>
+
+  <div class="pill amarelo" id="pill">● Conectando...</div>
+
+  <div class="campo-label">Seu nome</div>
+  <input id="inp-nome" type="text" placeholder="Como quer aparecer na TV?" maxlength="40"/>
+
+  <div class="mic-wrap">
+    <div class="ondas-cel" id="ondas-cel">
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+      <div class="onda-cel"></div>
+    </div>
+    <button id="btn-mic" onclick="toggleMic()">🎙️</button>
+    <div class="mic-label" id="mic-label">Toque para falar</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-val" id="st-chunks">0</div><div class="stat-lbl">Chunks</div></div>
+    <div class="stat"><div class="stat-val" id="st-tempo">0s</div><div class="stat-lbl">Tempo</div></div>
+    <div class="stat"><div class="stat-val" id="st-status">■</div><div class="stat-lbl">Estado</div></div>
+  </div>
+
+  <div class="instrucao">
+    Toque no microfone para começar.<br>
+    Sua voz aparece na TV em <strong>~5 segundos</strong>.<br>
+    Toque novamente para parar.
+  </div>
+</div>
+
+<script>
+const CHUNK_S = 4;
+const params  = new URLSearchParams(location.search);
+const SID     = (params.get('sessao') || '').toUpperCase();
+
+let ws           = null;
+let recon        = null;
+let stream       = null;
+let recorder     = null;
+let transmitindo = false;
+let chunkNum     = 0;
+let enviados     = 0;
+let tempoInicio  = null;
+let timerTempo   = null;
+
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!SID) { mostrarErro(); return; }
+  try {
+    const r = await fetch(`/api/sessao/${SID}`);
+    const d = await r.json();
+    if (!d.success) throw new Error();
+  } catch { mostrarErro(); return; }
+
+  document.getElementById('sid-display').textContent = SID;
+  const nomeSalvo = localStorage.getItem('momento_nome');
+  if (nomeSalvo) document.getElementById('inp-nome').value = nomeSalvo;
+  ligarWS();
+});
+
+function mostrarErro() {
+  document.getElementById('tela-ok').style.display = 'none';
+  document.getElementById('tela-erro').style.display = 'block';
+}
+
+function ligarWS() {
+  if (recon) clearTimeout(recon);
+  if (ws)    ws.close();
+  const url = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+  ws = new WebSocket(url);
+  setPill('amarelo', '● Conectando...');
+  ws.onopen = () => {
+    ws.send(JSON.stringify({ tipo: 'celular_conectado', sessaoId: SID }));
+    setPill('verde', '● Conectado');
+  };
+  ws.onmessage = (e) => {
+    const m = JSON.parse(e.data);
+    if (m.tipo === 'sessao_encerrada') { setPill('vermelho', '● Encerrada'); pararMic(); }
+  };
+  ws.onclose = () => { setPill('vermelho', '● Reconectando...'); recon = setTimeout(ligarWS, 3000); };
+}
+
+async function toggleMic() {
+  if (transmitindo) { pararMic(); return; }
+  await iniciarMic();
+}
+
+async function iniciarMic() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+  } catch(e) {
+    setPill('vermelho', '● Mic negado');
+    document.getElementById('mic-label').textContent = 'Permita o microfone';
+    return;
+  }
+
+  const autor = document.getElementById('inp-nome').value.trim() || 'Convidado';
+  localStorage.setItem('momento_nome', autor);
+
+  transmitindo = true;
+  chunkNum     = 0;
+  enviados     = 0;
+  tempoInicio  = Date.now();
+
+  document.getElementById('btn-mic').classList.add('gravando');
+  document.getElementById('btn-mic').textContent = '⏹️';
+  document.getElementById('mic-label').textContent = 'Transmitindo ao vivo...';
+  document.getElementById('mic-label').classList.add('gravando');
+  document.getElementById('ondas-cel').classList.add('ativa');
+  document.getElementById('st-status').textContent = '🔴';
+
+  timerTempo = setInterval(() => {
+    const s = Math.floor((Date.now() - tempoInicio) / 1000);
+    document.getElementById('st-tempo').textContent = s + 's';
+  }, 1000);
+
+  gravarChunk();
+}
+
+function pararMic() {
+  transmitindo = false;
+  if (recorder && recorder.state !== 'inactive') recorder.stop();
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  clearInterval(timerTempo);
+
+  document.getElementById('btn-mic').classList.remove('gravando');
+  document.getElementById('btn-mic').textContent = '🎙️';
+  document.getElementById('mic-label').textContent = 'Toque para falar';
+  document.getElementById('mic-label').classList.remove('gravando');
+  document.getElementById('ondas-cel').classList.remove('ativa');
+  document.getElementById('st-status').textContent = '■';
+}
+
+function gravarChunk() {
+  if (!transmitindo) return;
+  chunkNum++;
+  document.getElementById('st-chunks').textContent = chunkNum;
+
+  const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+    ? 'audio/webm;codecs=opus'
+    : MediaRecorder.isTypeSupported('audio/webm')
+    ? 'audio/webm'
+    : 'audio/mp4';
+
+  const chunks = [];
+  try {
+    recorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 64000 });
+  } catch(e) {
+    recorder = new MediaRecorder(stream);
+  }
+
+  recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+  recorder.onstop = async () => {
+    if (chunks.length === 0) { if (transmitindo) gravarChunk(); return; }
+    const blob = new Blob(chunks, { type: recorder.mimeType });
+    enviarChunk(blob, chunkNum);
+    if (transmitindo) gravarChunk();
+  };
+
+  recorder.start();
+  setTimeout(() => {
+    if (recorder && recorder.state === 'recording') recorder.stop();
+  }, CHUNK_S * 1000);
+}
+
+async function enviarChunk(blob, num) {
+  try {
+    const autor = document.getElementById('inp-nome').value.trim() || 'Convidado';
+    const ext   = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
+    const form  = new FormData();
+    form.append('audio',    blob, `chunk_${num}.${ext}`);
+    form.append('sessaoId', SID);
+    form.append('audioId',  'aud_' + Date.now() + '_' + num);
+    form.append('autor',    autor);
+
+    const r = await fetch('/api/audio/upload', { method: 'POST', body: form });
+    const d = await r.json();
+    if (d.success) {
+      enviados++;
+      document.getElementById('st-chunks').textContent = enviados;
+    }
+  } catch(e) {
+    console.error('Erro chunk áudio', e);
+  }
+}
+
+function setPill(cor, txt) {
+  const p = document.getElementById('pill');
+  p.className = `pill ${cor}`;
+  p.textContent = txt;
+}
+</script>
+</body>
+</html>
